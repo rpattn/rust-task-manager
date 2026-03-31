@@ -1,8 +1,8 @@
 use core::fmt;
 use chrono::{DateTime, Utc};
-use serde::{Serialize};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Task {
     id: i32,
     title: String,
@@ -12,7 +12,7 @@ pub struct Task {
     created: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub enum Priority {
     Low,
@@ -20,9 +20,9 @@ pub enum Priority {
     High
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
-enum Status {
+pub enum Status {
     Todo,
     Complete
 }
