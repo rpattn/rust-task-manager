@@ -11,6 +11,9 @@ impl Manager {
             tasks: Vec::new(),
         }
     }
+    pub fn add_task(&mut self, task: Task) {
+        self.tasks.push(task);
+    }
     pub fn load_tasks(&mut self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
         let tasks_str = load(filename).unwrap_or_default();
 
