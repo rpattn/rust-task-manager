@@ -29,8 +29,11 @@ impl Manager {
             }
         }
     }
-    pub fn get(&mut self, index: usize) -> Option<&Task> {
+    pub fn get(&self, index: usize) -> Option<&Task> {
         self.tasks.get(index)
+    }
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Task> {
+        self.tasks.get_mut(index)
     }
     pub fn load_tasks(&mut self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
         let tasks_str = load(filename).unwrap_or_default();
@@ -39,16 +42,26 @@ impl Manager {
             return Ok(());
         }
 
-        let tasks: Vec<Task> = serde_json::from_str(&tasks_str)?;
+        let tasks: Result<Vec<Task>, serde_json::Error> = serde_json::from_str(&tasks_str);
 
-        self.tasks = tasks;
-        Ok(())
+        match tasks {
+            Ok(tasks) => {
+                self.tasks = tasks;
+                Ok(())
+            }
+            Err(_) => {
+                println!("Error loading tasks!");
+                Ok(())
+            }
+        }
+    }
+    pub fn get_all(&self) -> &Vec<Task> {
+        &self.tasks
     }
     pub fn save_tasks(&self, filename: &str) -> Result<(), std::io::Error> {
         let tasks_str = serde_json::to_string_pretty(&self.tasks).unwrap();
         save(filename, &tasks_str)
     }
-
 }
 
 pub enum RemoveBy {
