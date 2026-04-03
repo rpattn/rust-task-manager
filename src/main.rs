@@ -10,31 +10,27 @@ use parser::get_args;
 
 use tasks::GetBy;
 
+use parser::Cli;
+use tasks::ManagerError;
+
 const TASKS_FILENAME: &str = "out/tasks.json";
 
-fn main() {
-    let mut manager = Manager::new();
-    manager
-        .load_tasks(TASKS_FILENAME)
-        .expect("Error loading tasks");
-
-    let cli_args = get_args();
-
-    let mut save_tasks = true;
-
-    match cli_args.command {
+fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError> {
+    match args.command {
         Some(Command::Get { id }) => {
-            save_tasks = false;
             if let Some(taskid) = id {
                 let task = manager.get(taskid);
                 if let Some(task) = task {
                     println!("Task: {task}");
+                    Ok(false)
                 } else {
                     println!("No task found for that id");
+                    Err(ManagerError::TaskNotFound)
                 }
             } else {
                 println!("Supply a task id or list index");
-                println!("Tasks count is {}", manager.get_all().len().to_string())
+                println!("Tasks count is {}", manager.get_all().len().to_string());
+                Ok(false)
             }
         }
         Some(Command::Add { name }) => {
@@ -42,25 +38,31 @@ fn main() {
             task.title = name;
             println!("Adding: {}", task);
             manager.add(task);
-            println!("Added")
+            println!("Added");
+            Ok(true)
         }
         Some(Command::Remove { id, last }) => {
             if let Some(taskid) = id {
-                manager.remove(taskid);
-                println!("Removed task with id: {:?}", &taskid)
+                manager.remove(taskid)?;
+                println!("Removed task with id: {:?}", &taskid);
+                Ok(true)
             } else if last {
-                manager.remove(GetBy::Last);
-                println!("Removed the last task in the list")
+                manager.remove(GetBy::Last)?;
+                println!("Removed the last task in the list");
+                Ok(true)
             } else {
                 println!("Supply a task id");
+                Ok(false)
             }
         }
         Some(Command::Clear { force }) => {
             if force {
                 manager.clear_all_tasks();
                 println!("Cleared");
+                Ok(true)
             } else {
                 println!("Use --force to remove ALL tasks, this cannot be undone!!");
+                Ok(false)
             }
         }
         Some(Command::Complete { id }) => {
@@ -69,16 +71,48 @@ fn main() {
                 if let Some(task) = task {
                     task.mark_complete();
                     println!("Task completed: {task}");
+                    Ok(true)
                 } else {
                     println!("No task found for id: {:?}", id);
+                    Ok(false)
                 }
             } else {
                 println!("Supply a task id");
+                Ok(false)
             }
         }
         None => {
-            save_tasks = false;
-            manager.list_tasks();
+            match manager.list_tasks() {
+                Ok(()) => Ok(false),
+                Err(e) => Err(e)
+            }
+        }
+    }
+}
+
+fn main() {
+    let mut manager = Manager::new();
+    match manager.load_tasks(TASKS_FILENAME) {
+        Ok(()) => {}
+        Err(e) => {
+            println!("Error: {e}")
+        }
+    }
+
+    let cli_args = get_args();
+
+    let save_tasks = handle_command(cli_args, &mut manager);
+
+    match save_tasks {
+        Ok(save_tasks) => match save_tasks {
+            true => match manager.save_tasks(TASKS_FILENAME) {
+                Ok(()) => {}
+                Err(e) => println!("Error: {e}"),
+            },
+            false => return,
+        },
+        Err(e) => {
+            println!("Error: {e}")
         }
     }
 
@@ -87,12 +121,4 @@ fn main() {
     //    task.title = String::from("This is the last task in the list");
     //    save_tasks = true;
     // }
-
-    if !save_tasks {
-        return;
-    }
-
-    manager
-        .save_tasks(TASKS_FILENAME)
-        .expect("Error saving tasks");
 }

@@ -11,6 +11,16 @@ pub struct Manager {
     tasks: Vec<Task>,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ManagerError {
+    #[error("Task not found")]
+    TaskNotFound,
+    #[error("io error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("parse error: {0}")]
+    ParseError(#[from] serde_json::Error),
+}
+
 impl Manager {
     pub fn new() -> Manager {
         Manager { tasks: Vec::new() }
@@ -29,11 +39,16 @@ impl Manager {
             },
         }
     }
-    pub fn remove(&mut self, by: impl IntoGetBy) {
+    pub fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError> {
         if let Some(task) = self.get(by) {
             if let Some(pos) = self.tasks.iter().position(|x| x == task) {
                 self.tasks.remove(pos);
+                Ok(())
+            } else {
+                Err(ManagerError::TaskNotFound)
             }
+        } else {
+            Err(ManagerError::TaskNotFound)
         }
     }
     pub fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
@@ -47,37 +62,28 @@ impl Manager {
             None
         }
     }
-    pub fn load_tasks(&mut self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let tasks_str = load(filename).unwrap_or_default();
-
+    pub fn load_tasks(&mut self, filename: &str) -> Result<(), ManagerError> {
+        let tasks_str = load(filename)?;
         if tasks_str.is_empty() {
+            println!("Tasks file is empty, starting new list");
             return Ok(());
         }
 
-        let tasks: Result<Vec<Task>, serde_json::Error> = serde_json::from_str(&tasks_str);
-
-        match tasks {
-            Ok(tasks) => {
-                self.tasks = tasks;
-                Ok(())
-            }
-            Err(_) => {
-                println!("Error loading tasks!");
-                Ok(())
-            }
-        }
+        self.tasks = serde_json::from_str::<Vec<Task>>(&tasks_str)?;
+        Ok(())
     }
     pub fn get_all(&self) -> &Vec<Task> {
         &self.tasks
     }
-    pub fn save_tasks(&self, filename: &str) -> Result<(), std::io::Error> {
-        let tasks_str = serde_json::to_string_pretty(&self.tasks).unwrap();
-        save(filename, &tasks_str)
+    pub fn save_tasks(&self, filename: &str) -> Result<(), ManagerError> {
+        let tasks_str = serde_json::to_string_pretty(&self.tasks)?;
+        save(filename, &tasks_str)?;
+        Ok(())
     }
-    pub fn list_tasks(&self) {
-        let tasks_json =
-            serde_json::to_string_pretty(self.get_all()).expect("Error getting tasks json string");
+    pub fn list_tasks(&self) -> Result<(), ManagerError> {
+        let tasks_json = serde_json::to_string_pretty(self.get_all())?;
         println!("Tasks: {tasks_json}");
+        Ok(())
     }
     pub fn clear_all_tasks(&mut self) {
         self.tasks = Vec::new();
