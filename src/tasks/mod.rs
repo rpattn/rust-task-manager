@@ -1,5 +1,5 @@
-pub mod task;
 pub mod manager;
+pub mod task;
 
-pub use task::Task;
 pub use manager::Manager;
+pub use task::Task;

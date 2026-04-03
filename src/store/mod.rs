@@ -1,7 +1,6 @@
 use std::{fs, io, path::Path};
 
 pub fn save(filename: &str, text: &str) -> Result<(), io::Error> {
-
     // create parent dir if filename includes folders, unwrap any error
     let parent = Path::new(filename).parent();
     if let Some(dir) = parent {

@@ -1,15 +1,16 @@
-use crate::{store::{load, save}, tasks::Task};
+use crate::{
+    store::{load, save},
+    tasks::Task,
+};
 
 #[derive(Debug)]
 pub struct Manager {
-   tasks: Vec<Task>
+    tasks: Vec<Task>,
 }
 
 impl Manager {
     pub fn new() -> Manager {
-        Manager {
-            tasks: Vec::new(),
-        }
+        Manager { tasks: Vec::new() }
     }
     pub fn add(&mut self, task: Task) {
         self.tasks.push(task);
@@ -61,6 +62,14 @@ impl Manager {
     pub fn save_tasks(&self, filename: &str) -> Result<(), std::io::Error> {
         let tasks_str = serde_json::to_string_pretty(&self.tasks).unwrap();
         save(filename, &tasks_str)
+    }
+    pub fn list_tasks(&self) {
+        let tasks_json =
+            serde_json::to_string_pretty(self.get_all()).expect("Error getting tasks json string");
+        println!("Tasks: {tasks_json}");
+    }
+    pub fn clear_all_tasks(&mut self) {
+        self.tasks = Vec::new();
     }
 }
 

@@ -1,5 +1,5 @@
-use core::fmt;
 use chrono::{DateTime, Utc};
+use core::fmt;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -18,14 +18,14 @@ pub struct Task {
 pub enum Priority {
     Low,
     Medium,
-    High
+    High,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum Status {
     Todo,
-    Complete
+    Complete,
 }
 
 impl Default for Task {
@@ -42,16 +42,19 @@ impl Default for Task {
 
 impl fmt::Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}, {}, Priority: {:?}, Status: {:?}, Created at: {}",
-            self.id, self.title, self.priority, self.done, self.created)
+        write!(
+            f,
+            "{}, {}, Priority: {:?}, Status: {:?}, Created at: {}",
+            self.id, self.title, self.priority, self.done, self.created
+        )
     }
 }
 
 impl Task {
     pub fn mark_complete(&mut self) {
         match self.done {
-            Status::Todo => {self.done = Status::Complete},
-            Status::Complete => {},
+            Status::Todo => self.done = Status::Complete,
+            Status::Complete => {}
         }
     }
     #[allow(dead_code)]
