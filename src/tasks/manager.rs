@@ -28,51 +28,47 @@ impl Manager {
     pub fn add(&mut self, task: Task) {
         self.tasks.push(task);
     }
-    pub fn get(&self, by: impl IntoGetBy) -> Option<&Task> {
+    fn get_index(&self, by: impl IntoGetBy) -> Option<usize> {
         match by.into_get_by() {
-            GetBy::ByIndex(index) => self.tasks.get(index),
-            GetBy::Last => self.tasks.get(self.tasks.len() - 1),
-            GetBy::ByUuid(uuid) => self.tasks.iter().find(|x| x.get_id() == &uuid),
+            GetBy::ByIndex(index) => Some(index),
+            GetBy::Last => {
+                if self.tasks.is_empty() {
+                    None
+                } else {
+                    Some(self.tasks.len() - 1)
+                }
+            }
+            GetBy::ByUuid(uuid) => self.tasks.iter().position(|x| x.get_id() == &uuid),
             GetBy::ByIdArg(id_arg) => match id_arg {
-                IdArg::Index { index } => self.tasks.get(index),
-                IdArg::Uuid { uuid } => self.tasks.iter().find(|x| x.get_id() == &uuid),
+                IdArg::Index { index } => Some(index),
+                IdArg::Uuid { uuid } => self.tasks.iter().position(|x| x.get_id() == &uuid),
             },
         }
     }
+    pub fn get(&self, by: impl IntoGetBy) -> Option<&Task> {
+        self.get_index(by).and_then(|i| self.tasks.get(i))
+    }
+    pub fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
+        self.get_index(by).and_then(|i| self.tasks.get_mut(i))
+    }
     pub fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError> {
-        if let Some(task) = self.get(by) {
-            if let Some(pos) = self.tasks.iter().position(|x| x == task) {
-                self.tasks.remove(pos);
-                Ok(())
-            } else {
-                Err(ManagerError::TaskNotFound)
-            }
+        if let Some(index) = self.get_index(by) {
+            self.tasks.remove(index);
+            Ok(())
         } else {
             Err(ManagerError::TaskNotFound)
         }
     }
-    pub fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
-        if let Some(task) = self.get(by) {
-            if let Some(index) = self.tasks.iter().position(|x| x == task) {
-                self.tasks.get_mut(index)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
     pub fn load_tasks(&mut self, filename: &str) -> Result<(), ManagerError> {
-        let tasks_str = load(filename)?;
-        if tasks_str.is_empty() {
-            println!("Tasks file is empty, starting new list");
-            return Ok(());
+        match load(filename) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(e.into()),
+            Ok(s) if s.is_empty() => return Ok(()),
+            Ok(s) => self.tasks = serde_json::from_str(&s)?,
         }
-
-        self.tasks = serde_json::from_str::<Vec<Task>>(&tasks_str)?;
         Ok(())
     }
-    pub fn get_all(&self) -> &Vec<Task> {
+    pub fn get_all(&self) -> &[Task] {
         &self.tasks
     }
     pub fn save_tasks(&self, filename: &str) -> Result<(), ManagerError> {
@@ -86,7 +82,7 @@ impl Manager {
         Ok(())
     }
     pub fn clear_all_tasks(&mut self) {
-        self.tasks = Vec::new();
+        self.tasks.clear();
     }
 }
 

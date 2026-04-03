@@ -51,7 +51,7 @@ pub enum Command {
         force: bool,
     },
     Complete {
-        id: Option<usize>,
+        id: Option<IdArg>,
     },
 }
 

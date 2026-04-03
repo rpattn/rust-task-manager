@@ -24,7 +24,6 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
                     println!("Task: {task}");
                     Ok(false)
                 } else {
-                    println!("No task found for that id");
                     Err(ManagerError::TaskNotFound)
                 }
             } else {
@@ -38,7 +37,6 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
             task.title = name;
             println!("Adding: {}", task);
             manager.add(task);
-            println!("Added");
             Ok(true)
         }
         Some(Command::Remove { id, last }) => {
@@ -73,21 +71,19 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
                     println!("Task completed: {task}");
                     Ok(true)
                 } else {
-                    println!("No task found for id: {:?}", id);
-                    Ok(false)
+                    Err(ManagerError::TaskNotFound)
                 }
             } else {
                 println!("Supply a task id");
                 Ok(false)
             }
         }
-        None => {
-            match manager.list_tasks() {
-                Ok(()) => Ok(false),
-                Err(e) => Err(e)
-            }
-        }
+        None => manager.list_tasks().map(|_| false), // list json by default, dont write to disk
     }
+}
+
+fn print_error_ln(e: ManagerError) {
+    println!("Error: {e}");
 }
 
 fn main() {
@@ -95,7 +91,7 @@ fn main() {
     match manager.load_tasks(TASKS_FILENAME) {
         Ok(()) => {}
         Err(e) => {
-            println!("Error: {e}")
+            print_error_ln(e);
         }
     }
 
@@ -107,13 +103,11 @@ fn main() {
         Ok(save_tasks) => match save_tasks {
             true => match manager.save_tasks(TASKS_FILENAME) {
                 Ok(()) => {}
-                Err(e) => println!("Error: {e}"),
+                Err(e) => print_error_ln(e),
             },
             false => return,
         },
-        Err(e) => {
-            println!("Error: {e}")
-        }
+        Err(e) => print_error_ln(e),
     }
 
     // let last = manager.get_mut(GetBy::Last);
