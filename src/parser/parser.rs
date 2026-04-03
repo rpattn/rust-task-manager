@@ -1,8 +1,9 @@
-use std::str::FromStr;
-
 use clap::Parser;
 use clap::Subcommand;
+use std::str::FromStr;
 use uuid::Uuid;
+
+use crate::tasks::task::Priority;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -40,6 +41,8 @@ pub enum Command {
     },
     Add {
         name: String,
+        #[arg(short, long)]
+        priority: Option<Priority>,
     },
     Remove {
         id: Option<IdArg>,

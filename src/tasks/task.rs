@@ -13,7 +13,7 @@ pub struct Task {
     created: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, clap::ValueEnum)]
 #[allow(dead_code)]
 pub enum Priority {
     Low,

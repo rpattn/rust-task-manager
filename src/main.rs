@@ -32,9 +32,14 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
                 Ok(false)
             }
         }
-        Some(Command::Add { name }) => {
+        Some(Command::Add { name, priority }) => {
             let mut task = Task::default();
+
             task.title = name;
+            if let Some(priority) = priority {
+                task.priority = priority;
+            }
+
             println!("Adding: {}", task);
             manager.add(task);
             Ok(true)

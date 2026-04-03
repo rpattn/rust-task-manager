@@ -60,7 +60,7 @@ cargo run -- clear --force
 - [x] `task complete <id|index>`
 - [x] `task remove <id|index>`
 - [x] UUID + index based lookup throughout
-- [ ] `--priority` flag on `add`
+- [x] `--priority` flag on `add`
 
 ### Next
 - [ ] `edit` command — update title or priority by id
