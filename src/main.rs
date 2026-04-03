@@ -87,7 +87,7 @@ fn print_error_ln(e: ManagerError) {
 }
 
 fn main() {
-    let mut manager = Manager::new();
+    let mut manager = Manager::default();
     match manager.load_tasks(TASKS_FILENAME) {
         Ok(()) => {}
         Err(e) => {

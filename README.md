@@ -1,69 +1,79 @@
 # rust-task-manager
-
 A terminal-based task manager written in Rust. Tasks are persisted locally as JSON.
 
 ## Features
-
-- Add, remove, and update tasks
+- Add, remove, and complete tasks
 - Set task priority (Low, Medium, High)
+- Look up tasks by UUID or list index
 - Mark tasks as complete
 - Persistent JSON storage
 - UUID-based task identification
 
 ## Requirements
-
 - Rust 1.75+
 
 ## Getting Started
-
 ```bash
 git clone <repo>
 cd rust-task-manager
 cargo run
 ```
 
-Tasks are saved to `out/tasks.json` automatically.
+Tasks are saved to `out/tasks.json` automatically. The file is created on first write.
+
+## Usage
+
+```bash
+cargo run -- add "Buy milk"
+cargo run -- list
+cargo run -- complete <id|index>
+cargo run -- remove <id|index>
+cargo run -- remove --last
+cargo run -- get <id|index>
+cargo run -- clear --force
+```
 
 ## Dependencies
-
 | Crate | Purpose |
 |---|---|
 | `serde` / `serde_json` | JSON serialisation |
 | `uuid` | Unique task IDs |
 | `chrono` | Timestamps |
+| `clap` | CLI argument parsing |
+| `thiserror` | Structured error types |
 
 ---
 
 ## Roadmap
 
 ### Bug Fixes & Cleanup
-- [ ] Replace `unwrap()` in `store/mod.rs` with `?` for proper error propagation
-- [ ] Return `Err` from `load_tasks` on parse failure instead of swallowing it
-- [ ] Swap `get_all()` return type from `&Vec<Task>` to `&[Task]`
-- [ ] Remove redundant `'static` lifetime on `TASKS_FILENAME`
-- [ ] Implement `Default` for `Manager`
+- [x] Return `Err` from `load_tasks` on parse failure instead of swallowing it
+- [x] Swap `get_all()` return type from `&Vec<Task>` to `&[Task]`
+- [x] Remove redundant `'static` lifetime on `TASKS_FILENAME`
+- [x] Replace `unwrap()` in `store/mod.rs` on `create_dir_all`
+- [x] Implement `Default` for `Manager`
 
-### CLI (next)
-- [ ] Add `clap` for argument parsing
-- [ ] `task add <title> --priority <low|medium|high>`
-- [ ] `task list`
-- [ ] `task done <id>`
-- [ ] `task remove <id>`
-- [ ] Switch from index-based to ID-based task lookup throughout
+### CLI
+- [x] `clap` for argument parsing
+- [x] `task add <title>`
+- [x] `task list`
+- [x] `task complete <id|index>`
+- [x] `task remove <id|index>`
+- [x] UUID + index based lookup throughout
+- [ ] `--priority` flag on `add`
 
-### TUI
-- [ ] Add `ratatui` and wire up event loop
-- [ ] Scrollable task list view
-- [ ] Keyboard navigation (j/k or arrow keys)
-- [ ] Inline task creation
-- [ ] Priority and status indicators
-- [ ] Highlight overdue or high priority tasks
-
-### Storage
-- [ ] Support multiple task lists / projects
-- [ ] Configurable storage path via env or config file
+### Next
+- [ ] `edit` command — update title or priority by id
+- [ ] Filter `list` by status or priority (`--done`, `--priority high`)
 
 ### Stretch
-- [ ] Due dates
-- [ ] Filter and sort (by priority, status, date)
-- [ ] Tags
+- [ ] Due dates with `--due` flag and `overdue` command
+- [ ] Sort on list (`--sort priority`, `--sort created`)
+- [ ] Config file for storage path (`~/.config/taskmanager/config.toml`)
+- [ ] Swap JSON storage for SQLite via `rusqlite`
+
+### TUI (future)
+- [ ] Add `ratatui` and wire up event loop
+- [ ] Scrollable task list with keyboard navigation
+- [ ] Inline task creation
+- [ ] Priority and status indicators

@@ -6,7 +6,7 @@ use crate::{
     tasks::Task,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Manager {
     tasks: Vec<Task>,
 }
@@ -22,9 +22,6 @@ pub enum ManagerError {
 }
 
 impl Manager {
-    pub fn new() -> Manager {
-        Manager { tasks: Vec::new() }
-    }
     pub fn add(&mut self, task: Task) {
         self.tasks.push(task);
     }
