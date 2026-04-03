@@ -1,6 +1,8 @@
+use std::str::FromStr;
+
 use clap::Parser;
 use clap::Subcommand;
-// use uuid::Uuid;
+use uuid::Uuid;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -8,16 +10,39 @@ pub struct Cli {
     pub command: Option<Command>,
 }
 
+#[derive(Clone, Debug, Copy)]
+pub enum IdArg {
+    Index { index: usize },
+    Uuid { uuid: Uuid },
+}
+
+impl FromStr for IdArg {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let as_uuid = uuid::Uuid::from_str(s);
+        if let Ok(uuid) = as_uuid {
+            return Ok(IdArg::Uuid { uuid });
+        }
+        let as_usize = usize::from_str(s);
+        if let Ok(index) = as_usize {
+            return Ok(IdArg::Index { index: index });
+        } else {
+            return Err(String::from("Error parsing id"));
+        }
+    }
+}
+
 #[derive(Subcommand)]
 pub enum Command {
     Get {
-        id: Option<usize>,
+        id: Option<IdArg>,
     },
     Add {
         name: String,
     },
     Remove {
-        id: Option<usize>,
+        id: Option<IdArg>,
         #[arg(short, long)]
         last: bool,
     },

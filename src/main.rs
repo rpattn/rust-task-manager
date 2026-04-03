@@ -4,10 +4,11 @@ mod tasks;
 
 use tasks::Manager;
 use tasks::Task;
-use tasks::manager::RemoveBy;
 
 use parser::Command;
 use parser::get_args;
+
+use tasks::GetBy;
 
 const TASKS_FILENAME: &str = "out/tasks.json";
 
@@ -29,10 +30,11 @@ fn main() {
                 if let Some(task) = task {
                     println!("Task: {task}");
                 } else {
-                    println!("No task found for id: {taskid}");
+                    println!("No task found for that id");
                 }
             } else {
-                println!("Supply a task id");
+                println!("Supply a task id or list index");
+                println!("Tasks count is {}", manager.get_all().len().to_string())
             }
         }
         Some(Command::Add { name }) => {
@@ -44,10 +46,10 @@ fn main() {
         }
         Some(Command::Remove { id, last }) => {
             if let Some(taskid) = id {
-                manager.remove(RemoveBy::ByIndex(taskid));
-                println!("Removed task with id: {taskid}")
+                manager.remove(taskid);
+                println!("Removed task with id: {:?}", &taskid)
             } else if last {
-                manager.remove(RemoveBy::Last);
+                manager.remove(GetBy::Last);
                 println!("Removed the last task in the list")
             } else {
                 println!("Supply a task id");
@@ -79,6 +81,12 @@ fn main() {
             manager.list_tasks();
         }
     }
+
+    // let last = manager.get_mut(GetBy::Last);
+    // if let Some(task) = last {
+    //    task.title = String::from("This is the last task in the list");
+    //    save_tasks = true;
+    // }
 
     if !save_tasks {
         return;

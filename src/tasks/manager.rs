@@ -1,4 +1,7 @@
+use uuid::Uuid;
+
 use crate::{
+    parser::IdArg,
     store::{load, save},
     tasks::Task,
 };
@@ -15,26 +18,34 @@ impl Manager {
     pub fn add(&mut self, task: Task) {
         self.tasks.push(task);
     }
-    pub fn remove(&mut self, by: impl IntoRemoveBy) {
-        match by.into_remove_by() {
-            RemoveBy::ByTask(task) => {
-                if let Some(pos) = self.tasks.iter().position(|x| x == &task) {
-                    self.tasks.remove(pos);
-                }
-            }
-            RemoveBy::ByIndex(index) => {
-                self.tasks.remove(index);
-            }
-            RemoveBy::Last => {
-                self.tasks.pop();
+    pub fn get(&self, by: impl IntoGetBy) -> Option<&Task> {
+        match by.into_get_by() {
+            GetBy::ByIndex(index) => self.tasks.get(index),
+            GetBy::Last => self.tasks.get(self.tasks.len() - 1),
+            GetBy::ByUuid(uuid) => self.tasks.iter().find(|x| x.get_id() == &uuid),
+            GetBy::ByIdArg(id_arg) => match id_arg {
+                IdArg::Index { index } => self.tasks.get(index),
+                IdArg::Uuid { uuid } => self.tasks.iter().find(|x| x.get_id() == &uuid),
+            },
+        }
+    }
+    pub fn remove(&mut self, by: impl IntoGetBy) {
+        if let Some(task) = self.get(by) {
+            if let Some(pos) = self.tasks.iter().position(|x| x == task) {
+                self.tasks.remove(pos);
             }
         }
     }
-    pub fn get(&self, index: usize) -> Option<&Task> {
-        self.tasks.get(index)
-    }
-    pub fn get_mut(&mut self, index: usize) -> Option<&mut Task> {
-        self.tasks.get_mut(index)
+    pub fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
+        if let Some(task) = self.get(by) {
+            if let Some(index) = self.tasks.iter().position(|x| x == task) {
+                self.tasks.get_mut(index)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
     pub fn load_tasks(&mut self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
         let tasks_str = load(filename).unwrap_or_default();
@@ -73,30 +84,36 @@ impl Manager {
     }
 }
 
-pub enum RemoveBy {
-    ByTask(Task),
+pub enum GetBy {
     ByIndex(usize),
+    ByUuid(Uuid),
+    ByIdArg(IdArg),
     Last,
 }
 
-pub trait IntoRemoveBy {
-    fn into_remove_by(self) -> RemoveBy;
+pub trait IntoGetBy {
+    fn into_get_by(self) -> GetBy;
 }
 
-impl IntoRemoveBy for RemoveBy {
-    fn into_remove_by(self) -> RemoveBy {
+impl IntoGetBy for GetBy {
+    fn into_get_by(self) -> GetBy {
         self
     }
 }
 
-impl IntoRemoveBy for Task {
-    fn into_remove_by(self) -> RemoveBy {
-        RemoveBy::ByTask(self)
+impl IntoGetBy for usize {
+    fn into_get_by(self) -> GetBy {
+        GetBy::ByIndex(self)
     }
 }
 
-impl IntoRemoveBy for usize {
-    fn into_remove_by(self) -> RemoveBy {
-        RemoveBy::ByIndex(self)
+impl IntoGetBy for Uuid {
+    fn into_get_by(self) -> GetBy {
+        GetBy::ByUuid(self)
+    }
+}
+impl IntoGetBy for IdArg {
+    fn into_get_by(self) -> GetBy {
+        GetBy::ByIdArg(self)
     }
 }
