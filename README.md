@@ -25,6 +25,7 @@ Tasks are saved to `out/tasks.json` automatically. The file is created on first 
 
 ```bash
 cargo run -- add "Buy milk"
+cargo edit <id|index> --title "New Title" --priority "Medium"
 cargo run -- list
 cargo run -- complete <id|index>
 cargo run -- remove <id|index>
