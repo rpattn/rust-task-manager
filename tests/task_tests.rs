@@ -1,7 +1,7 @@
 // tests/task_tests.rs
-use rust_task_manager::tasks::task::{Priority, Status};
 use rust_task_manager::tasks::Task;
 use rust_task_manager::tasks::task::TaskEdit;
+use rust_task_manager::tasks::task::{Priority, Status};
 
 // --- defaults ---
 
@@ -46,14 +46,20 @@ fn mark_complete_is_idempotent() {
 #[test]
 fn edit_updates_title() {
     let mut task = Task::default();
-    task.edit(TaskEdit { title: Some("new title".into()), priority: None });
+    task.edit(TaskEdit {
+        title: Some("new title".into()),
+        priority: None,
+    });
     assert_eq!(task.title, "new title");
 }
 
 #[test]
 fn edit_updates_priority() {
     let mut task = Task::default();
-    task.edit(TaskEdit { title: None, priority: Some(Priority::High) });
+    task.edit(TaskEdit {
+        title: None,
+        priority: Some(Priority::High),
+    });
     assert_eq!(task.priority, Priority::High);
 }
 
@@ -61,7 +67,10 @@ fn edit_updates_priority() {
 fn edit_with_all_none_is_no_op() {
     let mut task = Task::default();
     let original_title = task.title.clone();
-    task.edit(TaskEdit { title: None, priority: None });
+    task.edit(TaskEdit {
+        title: None,
+        priority: None,
+    });
     assert_eq!(task.title, original_title);
     assert_eq!(task.priority, Priority::Low);
 }
@@ -70,7 +79,10 @@ fn edit_with_all_none_is_no_op() {
 fn edit_partial_only_changes_provided_fields() {
     let mut task = Task::default();
     task.priority = Priority::High;
-    task.edit(TaskEdit { title: Some("updated".into()), priority: None });
+    task.edit(TaskEdit {
+        title: Some("updated".into()),
+        priority: None,
+    });
     assert_eq!(task.title, "updated");
     assert_eq!(task.priority, Priority::High); // unchanged
 }

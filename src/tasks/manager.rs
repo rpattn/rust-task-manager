@@ -26,7 +26,17 @@ impl Manager {
     }
     fn get_index(&self, by: impl IntoGetBy) -> Option<usize> {
         match by.into_get_by() {
-            GetBy::ByIndex(index) => Some(index),
+            GetBy::ByIndex(index) => {
+                if index < self.tasks.len() {
+                    Some(index)
+                } else {
+                    println!(
+                        "Task index {index} is out-of-bounds. There are {} tasks",
+                        self.tasks.len()
+                    );
+                    None
+                }
+            }
             GetBy::Last => {
                 if self.tasks.is_empty() {
                     None

@@ -2,7 +2,7 @@ use comfy_table::Table;
 use comfy_table::{Cell, Color};
 
 use crate::tasks::Task;
-use crate::tasks::task::{Status, Priority};
+use crate::tasks::task::{Priority, Status};
 
 pub fn status_to_cell(status: &Status) -> Cell {
     match status {
