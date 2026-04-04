@@ -1,116 +1,42 @@
+use rust_task_manager::commands::{CommandOutcome, handle_command};
 use rust_task_manager::display::print_table;
-use rust_task_manager::parser::{Cli, Command, get_args};
-use rust_task_manager::tasks::task::TaskEdit;
-use rust_task_manager::tasks::{GetBy, Manager, ManagerError, Task};
+use rust_task_manager::parser::get_args;
+use rust_task_manager::tasks::Manager;
 
 const TASKS_FILENAME: &str = "out/tasks.json";
-
-enum CommandOutcome {
-    Mutated,
-    ReadOnly,
-}
-
-fn handle_command(args: Cli, manager: &mut Manager) -> Result<CommandOutcome, ManagerError> {
-    match args.command {
-        Some(Command::Get { id }) => {
-            if let Some(taskid) = id {
-                let task = manager.get(taskid);
-                if let Some(task) = task {
-                    println!("Task: {task}");
-                    Ok(CommandOutcome::ReadOnly)
-                } else {
-                    Err(ManagerError::TaskNotFound)
-                }
-            } else {
-                println!("Supply a task id or list index");
-                println!("Tasks count is {}", manager.get_all().len());
-                Ok(CommandOutcome::ReadOnly)
-            }
-        }
-        Some(Command::Add { name, priority }) => {
-            let mut task = Task::default();
-
-            task.title = name;
-            if let Some(priority) = priority {
-                task.priority = priority;
-            }
-
-            println!("Adding: {}", task);
-            manager.add(task);
-            Ok(CommandOutcome::Mutated)
-        }
-        Some(Command::Edit {
-            id,
-            title,
-            priority,
-        }) => {
-            let task = manager.get_mut(id).ok_or(ManagerError::TaskNotFound)?;
-            task.edit(TaskEdit { title, priority });
-            println!("Task updated: {task}");
-            Ok(CommandOutcome::Mutated)
-        }
-        Some(Command::Remove { id, last }) => {
-            if let Some(taskid) = id {
-                manager.remove(taskid)?;
-                println!("Removed task with id: {:?}", &taskid);
-                Ok(CommandOutcome::Mutated)
-            } else if last {
-                manager.remove(GetBy::Last)?;
-                println!("Removed the last task in the list");
-                Ok(CommandOutcome::Mutated)
-            } else {
-                println!("Supply a task id");
-                Ok(CommandOutcome::ReadOnly)
-            }
-        }
-        Some(Command::Clear { force }) => {
-            if force {
-                println!("Cleared all tasks!");
-                manager.clear_all_tasks();
-                Ok(CommandOutcome::Mutated)
-            } else {
-                println!("Use --force to remove ALL tasks, this cannot be undone!!");
-                Ok(CommandOutcome::ReadOnly)
-            }
-        }
-        Some(Command::Complete { id }) => {
-            let task = manager.get_mut(id).ok_or(ManagerError::TaskNotFound)?;
-            task.mark_complete();
-            println!("Task completed: {task}");
-            Ok(CommandOutcome::Mutated)
-        }
-        None => {
-            print_table(manager.get_all());
-            Ok(CommandOutcome::ReadOnly) // list tasks  by default
-        }
-    }
-}
-
-fn print_error_ln(e: ManagerError) {
-    println!("Error: {e}");
-}
 
 fn main() {
     let mut manager = Manager::default();
     match manager.load_tasks(TASKS_FILENAME) {
         Ok(()) => {}
         Err(e) => {
-            print_error_ln(e);
+            println!("{e}");
         }
     }
 
     let cli_args = get_args();
 
-    let save_tasks = handle_command(cli_args, &mut manager);
+    let command_result = handle_command(cli_args, &mut manager);
 
-    match save_tasks {
-        Ok(save_tasks) => match save_tasks {
-            CommandOutcome::Mutated => match manager.save_tasks(TASKS_FILENAME) {
-                Ok(()) => {}
-                Err(e) => print_error_ln(e),
-            },
-            CommandOutcome::ReadOnly => {}
-        },
-        Err(e) => print_error_ln(e),
+    let result = match command_result {
+        Ok(r) => r,
+        Err(e) => {
+            println!("{e}");
+            return;
+        }
+    };
+
+    if let Some(message) = result.message {
+        println!("{message}");
+    }
+
+    if let CommandOutcome::Mutated = result.outcome
+        && let Err(e) = manager.save_tasks(TASKS_FILENAME)
+    {
+        println!("{e}");
+    }
+
+    if let Some(tasks) = result.tasks {
+        print_table(&tasks);
     }
 }
