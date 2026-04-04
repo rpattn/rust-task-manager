@@ -63,7 +63,7 @@ cargo run -- clear --force
 - [x] `--priority` flag on `add`
 
 ### Next
-- [ ] `edit` command — update title or priority by id
+- [x] `edit` command — update title or priority by id
 - [ ] Filter `list` by status or priority (`--done`, `--priority high`)
 
 ### Stretch

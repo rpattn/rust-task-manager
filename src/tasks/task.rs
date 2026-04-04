@@ -15,7 +15,6 @@ pub struct Task {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, clap::ValueEnum)]
-#[allow(dead_code)]
 pub enum Priority {
     Low,
     Medium,
@@ -23,10 +22,15 @@ pub enum Priority {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[allow(dead_code)]
 pub enum Status {
     Todo,
     Complete,
+}
+
+#[derive(Debug)]
+pub struct TaskEdit {
+    pub title: Option<String>,
+    pub priority: Option<Priority>,
 }
 
 impl Default for Task {
@@ -74,16 +78,15 @@ impl Task {
     pub fn mark_complete(&mut self) {
         self.done = Status::Complete;
     }
-    #[allow(dead_code)]
     pub fn get_id(&self) -> &Uuid {
         &self.id
     }
-    #[allow(dead_code)]
-    pub fn get_title(&self) -> &str {
-        &self.title
-    }
-    #[allow(dead_code)]
-    pub fn get_created_at(&self) -> &DateTime<Utc> {
-        &self.created
+    pub fn edit(&mut self, fields: TaskEdit) {
+        if let Some(title) = fields.title {
+            self.title = title;
+        }
+        if let Some(priority) = fields.priority {
+            self.priority = priority;
+        }
     }
 }

@@ -13,6 +13,8 @@ use tasks::GetBy;
 use parser::Cli;
 use tasks::ManagerError;
 
+use crate::tasks::task::TaskEdit;
+
 const TASKS_FILENAME: &str = "out/tasks.json";
 
 enum CommandOutcome {
@@ -49,6 +51,16 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<CommandOutcome, Ma
             manager.add(task);
             Ok(CommandOutcome::Mutated)
         }
+        Some(Command::Edit {
+            id,
+            title,
+            priority,
+        }) => {
+            let task = manager.get_mut(id).ok_or(ManagerError::TaskNotFound)?;
+            task.edit(TaskEdit { title, priority });
+            println!("Task updated: {task}");
+            Ok(CommandOutcome::Mutated)
+        }
         Some(Command::Remove { id, last }) => {
             if let Some(taskid) = id {
                 manager.remove(taskid)?;
@@ -66,26 +78,18 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<CommandOutcome, Ma
         Some(Command::Clear { force }) => {
             if force {
                 println!("Cleared all tasks!");
-                manager.clear_all_tasks().map(|_| CommandOutcome::Mutated)
+                manager.clear_all_tasks();
+                Ok(CommandOutcome::Mutated)
             } else {
                 println!("Use --force to remove ALL tasks, this cannot be undone!!");
                 Ok(CommandOutcome::ReadOnly)
             }
         }
         Some(Command::Complete { id }) => {
-            if let Some(taskid) = id {
-                let task = manager.get_mut(taskid);
-                if let Some(task) = task {
-                    task.mark_complete();
-                    println!("Task completed: {task}");
-                    Ok(CommandOutcome::Mutated)
-                } else {
-                    Err(ManagerError::TaskNotFound)
-                }
-            } else {
-                println!("Supply a task id");
-                Ok(CommandOutcome::ReadOnly)
-            }
+            let task = manager.get_mut(id).ok_or(ManagerError::TaskNotFound)?;
+            task.mark_complete();
+            println!("Task completed: {task}");
+            Ok(CommandOutcome::Mutated)
         }
         None => {
             manager.list_tasks();
@@ -117,7 +121,7 @@ fn main() {
                 Ok(()) => {}
                 Err(e) => print_error_ln(e),
             },
-            CommandOutcome::ReadOnly => {},
+            CommandOutcome::ReadOnly => {}
         },
         Err(e) => print_error_ln(e),
     }

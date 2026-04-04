@@ -2,7 +2,6 @@ use comfy_table::{Cell, Table};
 use uuid::Uuid;
 
 use crate::{
-    parser::IdArg,
     store::{load, save},
     tasks::Task,
 };
@@ -76,7 +75,7 @@ impl Manager {
         for (i, task) in self.tasks.iter().enumerate() {
             table.add_row(vec![
                 task.done.to_cell(),
-                Cell::new(task.get_title()),
+                Cell::new(&task.title),
                 task.priority.to_cell(),
                 Cell::new(i.to_string()),
                 Cell::new(task.get_id().to_string()),
@@ -84,9 +83,8 @@ impl Manager {
         }
         println!("{table}");
     }
-    pub fn clear_all_tasks(&mut self) -> Result<(), ManagerError> {
+    pub fn clear_all_tasks(&mut self) {
         self.tasks.clear();
-        Ok(())
     }
 }
 
@@ -115,10 +113,5 @@ impl IntoGetBy for usize {
 impl IntoGetBy for Uuid {
     fn into_get_by(self) -> GetBy {
         GetBy::ByUuid(self)
-    }
-}
-impl IntoGetBy for IdArg {
-    fn into_get_by(self) -> GetBy {
-        GetBy::from(self)
     }
 }

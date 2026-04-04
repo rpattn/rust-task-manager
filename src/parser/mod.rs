@@ -4,6 +4,7 @@ use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::tasks::GetBy;
+use crate::tasks::manager::IntoGetBy;
 use crate::tasks::task::Priority;
 
 #[derive(Parser)]
@@ -35,6 +36,7 @@ impl FromStr for IdArg {
     }
 }
 
+// Only allow user to get by unique fields, preserves internal full GetBy
 impl From<IdArg> for GetBy {
     fn from(id: IdArg) -> Self {
         match id {
@@ -54,6 +56,13 @@ pub enum Command {
         #[arg(short, long)]
         priority: Option<Priority>,
     },
+    Edit {
+        id: IdArg,
+        #[arg(long, short)]
+        title: Option<String>,
+        #[arg(long, short)]
+        priority: Option<Priority>,
+    },
     Remove {
         id: Option<IdArg>,
         #[arg(short, long)]
@@ -64,10 +73,16 @@ pub enum Command {
         force: bool,
     },
     Complete {
-        id: Option<IdArg>,
+        id: IdArg,
     },
 }
 
 pub fn get_args() -> Cli {
     Cli::parse()
+}
+
+impl IntoGetBy for IdArg {
+    fn into_get_by(self) -> GetBy {
+        GetBy::from(self)
+    }
 }
