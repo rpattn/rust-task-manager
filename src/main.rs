@@ -83,7 +83,7 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
                 Ok(false)
             }
         }
-        None => manager.list_tasks().map(|_| false), // list json by default, dont write to disk
+        None => manager.list_tasks().map(|_| false), // list tasks  by default, dont write to disk
     }
 }
 
@@ -112,6 +112,11 @@ fn main() {
             },
             false => return,
         },
+        Err(e) => print_error_ln(e),
+    }
+
+    match manager.list_tasks() {
+        Ok(_) => return,
         Err(e) => print_error_ln(e),
     }
 

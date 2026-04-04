@@ -1,3 +1,4 @@
+use comfy_table::{Cell, Table};
 use uuid::Uuid;
 
 use crate::{
@@ -74,8 +75,18 @@ impl Manager {
         Ok(())
     }
     pub fn list_tasks(&self) -> Result<(), ManagerError> {
-        let tasks_json = serde_json::to_string_pretty(self.get_all())?;
-        println!("Tasks: {tasks_json}");
+        let mut table = Table::new();
+        table.set_header(vec!["Status", "Title", "Priority", "Index", "ID"]);
+        for (i, task) in self.tasks.iter().enumerate() {
+        table.add_row(vec![
+            task.done.to_cell(),
+            Cell::new(task.get_title()),
+            task.priority.to_cell(),
+            Cell::new(i.to_string()),
+            Cell::new(task.get_id().to_string()),
+        ]);
+        }
+        println!("{table}");
         Ok(())
     }
     pub fn clear_all_tasks(&mut self) {
