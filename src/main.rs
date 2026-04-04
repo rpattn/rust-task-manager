@@ -1,21 +1,7 @@
-mod display;
-mod parser;
-mod store;
-mod tasks;
-
-use tasks::Manager;
-use tasks::Task;
-
-use parser::Command;
-use parser::get_args;
-
-use tasks::GetBy;
-
-use parser::Cli;
-use tasks::ManagerError;
-
-use crate::display::print_table;
-use crate::tasks::task::TaskEdit;
+use rust_task_manager::display::print_table;
+use rust_task_manager::parser::{Cli, Command, get_args};
+use rust_task_manager::tasks::task::TaskEdit;
+use rust_task_manager::tasks::{GetBy, Manager, ManagerError, Task};
 
 const TASKS_FILENAME: &str = "out/tasks.json";
 

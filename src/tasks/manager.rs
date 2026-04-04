@@ -30,10 +30,6 @@ impl Manager {
                 if index < self.tasks.len() {
                     Some(index)
                 } else {
-                    println!(
-                        "Task index {index} is out-of-bounds. There are {} tasks",
-                        self.tasks.len()
-                    );
                     None
                 }
             }
