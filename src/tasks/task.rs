@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use comfy_table::{Cell, Color};
 use core::fmt;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -52,25 +51,6 @@ impl fmt::Display for Task {
             "{}, {}, Priority: {:?}, Status: {:?}, Created at: {}",
             self.id, self.title, self.priority, self.done, self.created
         )
-    }
-}
-
-impl Status {
-    pub fn to_cell(&self) -> Cell {
-        match self {
-            Status::Todo => Cell::new("☐ Todo").fg(Color::Yellow),
-            Status::Complete => Cell::new("☑ Done").fg(Color::Green),
-        }
-    }
-}
-
-impl Priority {
-    pub fn to_cell(&self) -> Cell {
-        match self {
-            Priority::Low => Cell::new("Low").fg(Color::Green),
-            Priority::Medium => Cell::new("Medium").fg(Color::Yellow),
-            Priority::High => Cell::new("High").fg(Color::Red),
-        }
     }
 }
 

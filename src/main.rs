@@ -1,3 +1,4 @@
+mod display;
 mod parser;
 mod store;
 mod tasks;
@@ -13,6 +14,7 @@ use tasks::GetBy;
 use parser::Cli;
 use tasks::ManagerError;
 
+use crate::display::print_table;
 use crate::tasks::task::TaskEdit;
 
 const TASKS_FILENAME: &str = "out/tasks.json";
@@ -92,7 +94,7 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<CommandOutcome, Ma
             Ok(CommandOutcome::Mutated)
         }
         None => {
-            manager.list_tasks();
+            print_table(manager.get_all());
             Ok(CommandOutcome::ReadOnly) // list tasks  by default
         }
     }
