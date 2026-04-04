@@ -72,10 +72,7 @@ impl Priority {
 
 impl Task {
     pub fn mark_complete(&mut self) {
-        match self.done {
-            Status::Todo => self.done = Status::Complete,
-            Status::Complete => {}
-        }
+        self.done = Status::Complete;
     }
     #[allow(dead_code)]
     pub fn get_id(&self) -> &Uuid {

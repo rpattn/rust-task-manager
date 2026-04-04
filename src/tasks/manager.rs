@@ -37,10 +37,6 @@ impl Manager {
                 }
             }
             GetBy::ByUuid(uuid) => self.tasks.iter().position(|x| x.get_id() == &uuid),
-            GetBy::ByIdArg(id_arg) => match id_arg {
-                IdArg::Index { index } => Some(index),
-                IdArg::Uuid { uuid } => self.tasks.iter().position(|x| x.get_id() == &uuid),
-            },
         }
     }
     pub fn get(&self, by: impl IntoGetBy) -> Option<&Task> {
@@ -74,30 +70,29 @@ impl Manager {
         save(filename, &tasks_str)?;
         Ok(())
     }
-    pub fn list_tasks(&self) -> Result<(), ManagerError> {
+    pub fn list_tasks(&self) {
         let mut table = Table::new();
         table.set_header(vec!["Status", "Title", "Priority", "Index", "ID"]);
         for (i, task) in self.tasks.iter().enumerate() {
-        table.add_row(vec![
-            task.done.to_cell(),
-            Cell::new(task.get_title()),
-            task.priority.to_cell(),
-            Cell::new(i.to_string()),
-            Cell::new(task.get_id().to_string()),
-        ]);
+            table.add_row(vec![
+                task.done.to_cell(),
+                Cell::new(task.get_title()),
+                task.priority.to_cell(),
+                Cell::new(i.to_string()),
+                Cell::new(task.get_id().to_string()),
+            ]);
         }
         println!("{table}");
-        Ok(())
     }
-    pub fn clear_all_tasks(&mut self) {
+    pub fn clear_all_tasks(&mut self) -> Result<(), ManagerError> {
         self.tasks.clear();
+        Ok(())
     }
 }
 
 pub enum GetBy {
     ByIndex(usize),
     ByUuid(Uuid),
-    ByIdArg(IdArg),
     Last,
 }
 
@@ -124,6 +119,6 @@ impl IntoGetBy for Uuid {
 }
 impl IntoGetBy for IdArg {
     fn into_get_by(self) -> GetBy {
-        GetBy::ByIdArg(self)
+        GetBy::from(self)
     }
 }

@@ -15,21 +15,26 @@ use tasks::ManagerError;
 
 const TASKS_FILENAME: &str = "out/tasks.json";
 
-fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError> {
+enum CommandOutcome {
+    Mutated,
+    ReadOnly,
+}
+
+fn handle_command(args: Cli, manager: &mut Manager) -> Result<CommandOutcome, ManagerError> {
     match args.command {
         Some(Command::Get { id }) => {
             if let Some(taskid) = id {
                 let task = manager.get(taskid);
                 if let Some(task) = task {
                     println!("Task: {task}");
-                    Ok(false)
+                    Ok(CommandOutcome::ReadOnly)
                 } else {
                     Err(ManagerError::TaskNotFound)
                 }
             } else {
                 println!("Supply a task id or list index");
-                println!("Tasks count is {}", manager.get_all().len().to_string());
-                Ok(false)
+                println!("Tasks count is {}", manager.get_all().len());
+                Ok(CommandOutcome::ReadOnly)
             }
         }
         Some(Command::Add { name, priority }) => {
@@ -42,30 +47,29 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
 
             println!("Adding: {}", task);
             manager.add(task);
-            Ok(true)
+            Ok(CommandOutcome::Mutated)
         }
         Some(Command::Remove { id, last }) => {
             if let Some(taskid) = id {
                 manager.remove(taskid)?;
                 println!("Removed task with id: {:?}", &taskid);
-                Ok(true)
+                Ok(CommandOutcome::Mutated)
             } else if last {
                 manager.remove(GetBy::Last)?;
                 println!("Removed the last task in the list");
-                Ok(true)
+                Ok(CommandOutcome::Mutated)
             } else {
                 println!("Supply a task id");
-                Ok(false)
+                Ok(CommandOutcome::ReadOnly)
             }
         }
         Some(Command::Clear { force }) => {
             if force {
-                manager.clear_all_tasks();
-                println!("Cleared");
-                Ok(true)
+                println!("Cleared all tasks!");
+                manager.clear_all_tasks().map(|_| CommandOutcome::Mutated)
             } else {
                 println!("Use --force to remove ALL tasks, this cannot be undone!!");
-                Ok(false)
+                Ok(CommandOutcome::ReadOnly)
             }
         }
         Some(Command::Complete { id }) => {
@@ -74,16 +78,19 @@ fn handle_command(args: Cli, manager: &mut Manager) -> Result<bool, ManagerError
                 if let Some(task) = task {
                     task.mark_complete();
                     println!("Task completed: {task}");
-                    Ok(true)
+                    Ok(CommandOutcome::Mutated)
                 } else {
                     Err(ManagerError::TaskNotFound)
                 }
             } else {
                 println!("Supply a task id");
-                Ok(false)
+                Ok(CommandOutcome::ReadOnly)
             }
         }
-        None => manager.list_tasks().map(|_| false), // list tasks  by default, dont write to disk
+        None => {
+            manager.list_tasks();
+            Ok(CommandOutcome::ReadOnly) // list tasks  by default
+        }
     }
 }
 
@@ -106,23 +113,12 @@ fn main() {
 
     match save_tasks {
         Ok(save_tasks) => match save_tasks {
-            true => match manager.save_tasks(TASKS_FILENAME) {
+            CommandOutcome::Mutated => match manager.save_tasks(TASKS_FILENAME) {
                 Ok(()) => {}
                 Err(e) => print_error_ln(e),
             },
-            false => return,
+            CommandOutcome::ReadOnly => {},
         },
         Err(e) => print_error_ln(e),
     }
-
-    match manager.list_tasks() {
-        Ok(_) => return,
-        Err(e) => print_error_ln(e),
-    }
-
-    // let last = manager.get_mut(GetBy::Last);
-    // if let Some(task) = last {
-    //    task.title = String::from("This is the last task in the list");
-    //    save_tasks = true;
-    // }
 }
