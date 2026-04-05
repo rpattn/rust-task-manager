@@ -2,15 +2,15 @@
 A terminal-based task manager written in Rust. Tasks are persisted locally as JSON.
 
 ## Features
-- Add, remove, and complete tasks
-- Set task priority (Low, Medium, High)
+- Add, edit, remove, and complete tasks
+- Set task priority (Low, Medium, High) and status (Todo, Complete)
 - Look up tasks by UUID or list index
-- Mark tasks as complete
-- Persistent JSON storage
+- Persistent JSON storage with dirty-flag optimisation
+- Pluggable store architecture (`TaskStore` trait)
 - UUID-based task identification
 
 ## Requirements
-- Rust 1.75+
+- Rust 1.88+
 
 ## Getting Started
 ```bash
@@ -18,21 +18,34 @@ git clone <repo>
 cd rust-task-manager
 cargo run
 ```
-
 Tasks are saved to `out/tasks.json` automatically. The file is created on first write.
 
 ## Usage
-
 ```bash
 cargo run -- add "Buy milk"
-cargo edit <id|index> --title "New Title" --priority "Medium"
-cargo run -- list
+cargo run -- add "Buy milk" --priority high
+cargo run -- edit <id|index> --title "New Title"
+cargo run -- edit <id|index> --priority medium
+cargo run -- edit <id|index> --status complete
 cargo run -- complete <id|index>
 cargo run -- remove <id|index>
 cargo run -- remove --last
 cargo run -- get <id|index>
 cargo run -- clear --force
 ```
+Running with no subcommand lists all tasks.
+
+## Architecture
+The codebase is split into clean layers:
+
+| Layer | Location | Responsibility |
+|---|---|---|
+| CLI parsing | `src/parser` | Argument parsing via `clap` |
+| Commands | `src/commands.rs` | Business logic, returns `CommandResult` |
+| Store trait | `src/tasks/taskstore.rs` | `TaskStore` interface |
+| Json store | `src/tasks/jsonstore.rs` | File-backed implementation |
+| Basic store | `src/tasks/basicstore.rs` | In-memory implementation (used in tests) |
+| Display | `src/display` | Table rendering via `comfy_table` |
 
 ## Dependencies
 | Crate | Purpose |
@@ -42,36 +55,32 @@ cargo run -- clear --force
 | `chrono` | Timestamps |
 | `clap` | CLI argument parsing |
 | `thiserror` | Structured error types |
-
----
+| `comfy_table` | Terminal table rendering |
 
 ## Roadmap
 
-### Bug Fixes & Cleanup
-- [x] Return `Err` from `load_tasks` on parse failure instead of swallowing it
-- [x] Swap `get_all()` return type from `&Vec<Task>` to `&[Task]`
-- [x] Remove redundant `'static` lifetime on `TASKS_FILENAME`
-- [x] Replace `unwrap()` in `store/mod.rs` on `create_dir_all`
-- [x] Implement `Default` for `Manager`
-
-### CLI
+### Done
 - [x] `clap` for argument parsing
-- [x] `task add <title>`
-- [x] `task list`
-- [x] `task complete <id|index>`
-- [x] `task remove <id|index>`
+- [x] Add, list, complete, remove, get, clear commands
+- [x] `edit` command — update title, priority, or status by id
 - [x] UUID + index based lookup throughout
 - [x] `--priority` flag on `add`
+- [x] `--last` flag on `remove`
+- [x] `TaskStore` trait for pluggable backends
+- [x] `JsonStore` with dirty-flag optimised writes
+- [x] `BasicStore` in-memory implementation
+- [x] Structured error types with `TaskStoreError` / `JsonStoreError`
+- [x] Comprehensive test suite
 
 ### Next
-- [x] `edit` command — update title or priority by id
-- [ ] Filter `list` by status or priority (`--done`, `--priority high`)
+- [ ] Filter `list` by status or priority (`--status todo`, `--priority high`)
+- [ ] Sort on list (`--sort priority`, `--sort created`)
+- [ ] Config file for storage path (`~/.config/rust-task-manager/config.toml`)
+- [ ] Pagination (`--page`, `--page-size`)
 
 ### Stretch
 - [ ] Due dates with `--due` flag and `overdue` command
-- [ ] Sort on list (`--sort priority`, `--sort created`)
-- [ ] Config file for storage path (`~/.config/taskmanager/config.toml`)
-- [ ] Swap JSON storage for SQLite via `rusqlite`
+- [ ] SQLite backend via `rusqlite`
 
 ### TUI (future)
 - [ ] Add `ratatui` and wire up event loop
