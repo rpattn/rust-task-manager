@@ -3,9 +3,9 @@ use clap::Subcommand;
 use std::str::FromStr;
 use uuid::Uuid;
 
-use crate::tasks::GetBy;
-use crate::tasks::manager::IntoGetBy;
 use crate::tasks::task::Priority;
+use crate::tasks::taskstore::GetBy;
+use crate::tasks::taskstore::IntoGetBy;
 
 #[derive(Parser)]
 pub struct Cli {

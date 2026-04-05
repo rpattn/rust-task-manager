@@ -1,13 +1,15 @@
-use uuid::Uuid;
-
 use crate::{
     store::{load, save},
-    tasks::Task,
+    tasks::{
+        Task,
+        taskstore::{GetBy, IntoGetBy, TaskStore},
+    },
 };
 
 #[derive(Debug, Default)]
 pub struct Manager {
     tasks: Vec<Task>,
+    filename: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -21,8 +23,11 @@ pub enum ManagerError {
 }
 
 impl Manager {
-    pub fn add(&mut self, task: Task) {
-        self.tasks.push(task);
+    pub fn new(filename: &str) -> Self {
+        Manager {
+            tasks: Vec::default(),
+            filename: filename.into(),
+        }
     }
     fn get_index(&self, by: impl IntoGetBy) -> Option<usize> {
         match by.into_get_by() {
@@ -43,22 +48,8 @@ impl Manager {
             GetBy::ByUuid(uuid) => self.tasks.iter().position(|x| x.get_id() == &uuid),
         }
     }
-    pub fn get(&self, by: impl IntoGetBy) -> Option<&Task> {
-        self.get_index(by).and_then(|i| self.tasks.get(i))
-    }
-    pub fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
-        self.get_index(by).and_then(|i| self.tasks.get_mut(i))
-    }
-    pub fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError> {
-        if let Some(index) = self.get_index(by) {
-            self.tasks.remove(index);
-            Ok(())
-        } else {
-            Err(ManagerError::TaskNotFound)
-        }
-    }
-    pub fn load_tasks(&mut self, filename: &str) -> Result<(), ManagerError> {
-        match load(filename) {
+    fn load_tasks(&mut self) -> Result<(), ManagerError> {
+        match load(&self.filename) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(e) => return Err(e.into()),
             Ok(s) if s.is_empty() => return Ok(()),
@@ -66,43 +57,41 @@ impl Manager {
         }
         Ok(())
     }
-    pub fn get_all(&self) -> &[Task] {
-        &self.tasks
-    }
-    pub fn save_tasks(&self, filename: &str) -> Result<(), ManagerError> {
+    fn save_tasks(&self) -> Result<(), ManagerError> {
         let tasks_str = serde_json::to_string_pretty(&self.tasks)?;
-        save(filename, &tasks_str)?;
+        save(&self.filename, &tasks_str)?;
         Ok(())
     }
-    pub fn clear_all_tasks(&mut self) {
+}
+
+impl TaskStore for Manager {
+    fn open(&mut self) -> Result<(), ManagerError> {
+        self.load_tasks()
+    }
+    fn get<B: IntoGetBy>(&self, by: B) -> Option<&Task> {
+        self.get_index(by).and_then(|i| self.tasks.get(i))
+    }
+    fn add(&mut self, task: Task) {
+        self.tasks.push(task);
+    }
+    fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
+        self.get_index(by).and_then(|i| self.tasks.get_mut(i))
+    }
+    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError> {
+        if let Some(index) = self.get_index(by) {
+            self.tasks.remove(index);
+            Ok(())
+        } else {
+            Err(ManagerError::TaskNotFound)
+        }
+    }
+    fn get_all(&self) -> &[Task] {
+        &self.tasks
+    }
+    fn clear_all_tasks(&mut self) {
         self.tasks.clear();
     }
-}
-
-pub enum GetBy {
-    ByIndex(usize),
-    ByUuid(Uuid),
-    Last,
-}
-
-pub trait IntoGetBy {
-    fn into_get_by(self) -> GetBy;
-}
-
-impl IntoGetBy for GetBy {
-    fn into_get_by(self) -> GetBy {
-        self
-    }
-}
-
-impl IntoGetBy for usize {
-    fn into_get_by(self) -> GetBy {
-        GetBy::ByIndex(self)
-    }
-}
-
-impl IntoGetBy for Uuid {
-    fn into_get_by(self) -> GetBy {
-        GetBy::ByUuid(self)
+    fn close(&self) -> Result<(), ManagerError> {
+        self.save_tasks()
     }
 }

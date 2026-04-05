@@ -2,12 +2,13 @@ use rust_task_manager::commands::{CommandOutcome, handle_command};
 use rust_task_manager::display::print_table;
 use rust_task_manager::parser::get_args;
 use rust_task_manager::tasks::Manager;
+use rust_task_manager::tasks::taskstore::TaskStore;
 
 const TASKS_FILENAME: &str = "out/tasks.json";
 
 fn main() {
-    let mut manager = Manager::default();
-    match manager.load_tasks(TASKS_FILENAME) {
+    let mut manager = Manager::new(TASKS_FILENAME);
+    match manager.open() {
         Ok(()) => {}
         Err(e) => {
             println!("{e}");
@@ -31,7 +32,7 @@ fn main() {
     }
 
     if let CommandOutcome::Mutated = result.outcome
-        && let Err(e) = manager.save_tasks(TASKS_FILENAME)
+        && let Err(e) = manager.close()
     {
         println!("{e}");
     }

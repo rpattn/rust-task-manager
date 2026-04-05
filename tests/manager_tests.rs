@@ -1,6 +1,7 @@
 // tests/manager_tests.rs
 use rust_task_manager::tasks::task::Priority;
-use rust_task_manager::tasks::{GetBy, Manager, Task};
+use rust_task_manager::tasks::taskstore::{GetBy, TaskStore};
+use rust_task_manager::tasks::{Manager, Task};
 
 fn make_task(title: &str) -> Task {
     let mut task = Task::default();

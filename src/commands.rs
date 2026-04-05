@@ -1,6 +1,7 @@
 use crate::parser::{Cli, Command};
 use crate::tasks::task::TaskEdit;
-use crate::tasks::{GetBy, Manager, ManagerError, Task};
+use crate::tasks::taskstore::{GetBy, TaskStore};
+use crate::tasks::{ManagerError, Task};
 
 pub struct CommandResult {
     pub tasks: Option<Vec<Task>>,
@@ -13,7 +14,10 @@ pub enum CommandOutcome {
     ReadOnly,
 }
 
-pub fn handle_command(args: Cli, manager: &mut Manager) -> Result<CommandResult, ManagerError> {
+pub fn handle_command<S: TaskStore>(
+    args: Cli,
+    manager: &mut S,
+) -> Result<CommandResult, ManagerError> {
     match args.command {
         Some(Command::Get { id }) => {
             if let Some(taskid) = id {
