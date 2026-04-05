@@ -57,21 +57,14 @@ pub fn handle_command<S: TaskStore>(
             })
         }
         Some(Command::Get { id }) => {
-            if let Some(id) = id {
-                let task = manager.get(id);
-                if let Some(task) = task {
-                    Ok(CommandResult {
-                        tasks: Some(vec![task]),
-                        message: None,
-                    })
-                } else {
-                    Err(CommandError::TaskNotFound { id })
-                }
-            } else {
-                Err(CommandError::NotEnoughArgs {
-                    command: "Get".into(),
-                })
-            }
+            let id = id.ok_or(CommandError::NotEnoughArgs { command: "Get".into()})?;
+            // maybe just return the task from add, thinking about keeping for a SQL db where add
+            // may fail and we may not have added the task to the db
+            let task = manager.get(id).ok_or(CommandError::TaskNotFound { id })?;
+            Ok(CommandResult {
+                tasks: Some(vec![task]),
+                message: None,
+            })
         }
         Some(Command::Add { name, priority }) => {
             let mut task = Task::default();
@@ -82,7 +75,7 @@ pub fn handle_command<S: TaskStore>(
             }
             let id = *task.get_id();
             manager.add(task);
-            task = manager.get(id).ok_or(CommandError::TaskNotFound {
+            let task = manager.get(id).ok_or(CommandError::TaskNotFound {
                 id: IdArg::Uuid { uuid: id },
             })?;
             Ok(CommandResult {
