@@ -1,7 +1,7 @@
 // tests/manager_tests.rs
 use rust_task_manager::tasks::task::{Priority, TaskEdit};
 use rust_task_manager::tasks::taskstore::{GetBy, TaskStore};
-use rust_task_manager::tasks::{JsonStore, Task};
+use rust_task_manager::tasks::{BasicStore, Task};
 
 fn make_task(title: &str) -> Task {
     let mut task = Task::default();
@@ -9,8 +9,8 @@ fn make_task(title: &str) -> Task {
     task
 }
 
-fn manager_with_tasks(titles: &[&str]) -> JsonStore {
-    let mut manager = JsonStore::new("file.json".into());
+fn manager_with_tasks(titles: &[&str]) -> BasicStore {
+    let mut manager = BasicStore::default();
     for title in titles {
         manager.add(make_task(title));
     }
@@ -21,7 +21,7 @@ fn manager_with_tasks(titles: &[&str]) -> JsonStore {
 
 #[test]
 fn add_single_task_increases_count() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     manager.add(Task::default());
     assert_eq!(manager.get_all().len(), 1);
 }
@@ -51,7 +51,7 @@ fn get_by_index_out_of_bounds_returns_none() {
 
 #[test]
 fn get_by_index_on_empty_manager_returns_none() {
-    let manager = JsonStore::new("file.json".into());
+    let manager = BasicStore::default();
     assert!(manager.get(0usize).is_none());
 }
 
@@ -59,7 +59,7 @@ fn get_by_index_on_empty_manager_returns_none() {
 
 #[test]
 fn get_by_uuid_returns_correct_task() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     let task = make_task("find me");
     let id = *task.get_id();
     manager.add(task);
@@ -86,7 +86,7 @@ fn get_last_returns_final_task() {
 
 #[test]
 fn get_last_on_empty_returns_none() {
-    let manager = JsonStore::new("file.json".into());
+    let manager = BasicStore::default();
     assert!(manager.get(GetBy::Last).is_none());
 }
 
@@ -110,7 +110,7 @@ fn edit_updates_title() {
 
 #[test]
 fn edit_on_missing_returns_err() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     assert!(
         manager
             .edit(
@@ -143,7 +143,7 @@ fn remove_by_index_removes_correct_task() {
 
 #[test]
 fn remove_by_uuid_removes_correct_task() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     let task = make_task("target");
     let id = *task.get_id();
     manager.add(task);
@@ -165,7 +165,7 @@ fn remove_last_removes_final_task() {
 
 #[test]
 fn remove_last_on_empty_returns_err() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     assert!(manager.remove(GetBy::Last).is_err());
 }
 
@@ -192,7 +192,7 @@ fn clear_all_tasks_empties_manager() {
 
 #[test]
 fn clear_on_empty_manager_is_safe() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     manager.clear_all_tasks();
     assert_eq!(manager.get_all().len(), 0);
 }
@@ -201,7 +201,7 @@ fn clear_on_empty_manager_is_safe() {
 
 #[test]
 fn get_all_on_empty_returns_empty_slice() {
-    let manager = JsonStore::new("file.json".into());
+    let manager = BasicStore::default();
     assert!(manager.get_all().is_empty());
 }
 
@@ -215,7 +215,7 @@ fn get_all_returns_all_tasks() {
 
 #[test]
 fn add_task_with_high_priority() {
-    let mut manager = JsonStore::new("file.json".into());
+    let mut manager = BasicStore::default();
     let mut task = Task::default();
     task.priority = Priority::High;
     manager.add(task);
