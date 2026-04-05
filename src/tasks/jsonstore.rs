@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Manager {
+pub struct JsonStore {
     tasks: Vec<Task>,
     filename: String,
     dirty: bool,
@@ -17,25 +17,25 @@ pub struct Manager {
 // Implementing custom error type for future use
 // e.g. matching on IoError for retry, fallback
 #[derive(Debug, thiserror::Error)]
-pub enum ManagerError {
+pub enum JsonStoreError {
     #[error("io error: {0}")]
     IoError(#[from] std::io::Error),
     #[error("parse error: {0}")]
     ParseError(#[from] serde_json::Error),
 }
 
-impl From<ManagerError> for TaskStoreError {
-    fn from(e: ManagerError) -> Self {
+impl From<JsonStoreError> for TaskStoreError {
+    fn from(e: JsonStoreError) -> Self {
         match e {
-            ManagerError::IoError(e) => TaskStoreError::BackendError(Box::new(e)),
-            ManagerError::ParseError(e) => TaskStoreError::BackendError(Box::new(e)),
+            JsonStoreError::IoError(e) => TaskStoreError::BackendError(Box::new(e)),
+            JsonStoreError::ParseError(e) => TaskStoreError::BackendError(Box::new(e)),
         }
     }
 }
 
-impl Manager {
+impl JsonStore {
     pub fn new(filename: &str) -> Self {
-        Manager {
+        JsonStore {
             tasks: Vec::default(),
             filename: filename.into(),
             dirty: false,
@@ -60,7 +60,7 @@ impl Manager {
             GetBy::ByUuid(uuid) => self.tasks.iter().position(|x| x.get_id() == &uuid),
         }
     }
-    fn load_tasks(&mut self) -> Result<(), ManagerError> {
+    fn load_tasks(&mut self) -> Result<(), JsonStoreError> {
         match load(&self.filename) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(e) => return Err(e.into()),
@@ -72,14 +72,14 @@ impl Manager {
         }
         Ok(())
     }
-    fn save_tasks(&self) -> Result<(), ManagerError> {
+    fn save_tasks(&self) -> Result<(), JsonStoreError> {
         let tasks_str = serde_json::to_string_pretty(&self.tasks)?;
         save(&self.filename, &tasks_str)?;
         Ok(())
     }
 }
 
-impl TaskStore for Manager {
+impl TaskStore for JsonStore {
     fn open(&mut self) -> Result<(), TaskStoreError> {
         self.load_tasks()?;
         Ok(())

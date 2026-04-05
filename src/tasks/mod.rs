@@ -1,7 +1,7 @@
-pub mod manager;
+pub mod jsonstore;
 pub mod task;
 pub mod taskstore;
 
-pub use manager::Manager;
-pub use manager::ManagerError;
+pub use jsonstore::JsonStore;
+pub use jsonstore::JsonStoreError;
 pub use task::Task;
