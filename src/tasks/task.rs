@@ -56,6 +56,7 @@ impl fmt::Display for Task {
 }
 
 impl Task {
+    // Can just use edit, but I like this fn
     pub fn mark_complete(&mut self) {
         self.done = Status::Complete;
     }

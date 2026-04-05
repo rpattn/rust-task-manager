@@ -48,3 +48,23 @@ impl IntoGetBy for Uuid {
         GetBy::ByUuid(self)
     }
 }
+
+pub fn get_task_index(tasks: &[Task], by: impl IntoGetBy) -> Option<usize> {
+    match by.into_get_by() {
+        GetBy::ByIndex(index) => {
+            if index < tasks.len() {
+                Some(index)
+            } else {
+                None
+            }
+        }
+        GetBy::Last => {
+            if tasks.is_empty() {
+                None
+            } else {
+                Some(tasks.len() - 1)
+            }
+        }
+        GetBy::ByUuid(uuid) => tasks.iter().position(|x| x.get_id() == &uuid),
+    }
+}

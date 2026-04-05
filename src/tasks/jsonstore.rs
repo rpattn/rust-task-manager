@@ -3,7 +3,7 @@ use crate::{
     tasks::{
         Task,
         task::TaskEdit,
-        taskstore::{GetBy, IntoGetBy, TaskStore, TaskStoreError},
+        taskstore::{IntoGetBy, TaskStore, TaskStoreError, get_task_index},
     },
 };
 
@@ -41,25 +41,6 @@ impl JsonStore {
             dirty: false,
         }
     }
-    fn get_index(&self, by: impl IntoGetBy) -> Option<usize> {
-        match by.into_get_by() {
-            GetBy::ByIndex(index) => {
-                if index < self.tasks.len() {
-                    Some(index)
-                } else {
-                    None
-                }
-            }
-            GetBy::Last => {
-                if self.tasks.is_empty() {
-                    None
-                } else {
-                    Some(self.tasks.len() - 1)
-                }
-            }
-            GetBy::ByUuid(uuid) => self.tasks.iter().position(|x| x.get_id() == &uuid),
-        }
-    }
     fn load_tasks(&mut self) -> Result<(), JsonStoreError> {
         match load(&self.filename) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
@@ -85,14 +66,14 @@ impl TaskStore for JsonStore {
         Ok(())
     }
     fn get<B: IntoGetBy>(&self, by: B) -> Option<&Task> {
-        self.get_index(by).and_then(|i| self.tasks.get(i))
+        get_task_index(&self.tasks, by).and_then(|i| self.tasks.get(i))
     }
     fn add(&mut self, task: Task) {
         self.tasks.push(task);
         self.dirty = true;
     }
     fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
-        let task_index = self.get_index(by).ok_or(TaskStoreError::TaskNotFound)?;
+        let task_index = get_task_index(&self.tasks, by).ok_or(TaskStoreError::TaskNotFound)?;
         self.tasks
             .get_mut(task_index)
             .ok_or(TaskStoreError::TaskNotFound)?
@@ -101,7 +82,7 @@ impl TaskStore for JsonStore {
         Ok(())
     }
     fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError> {
-        if let Some(index) = self.get_index(by) {
+        if let Some(index) = get_task_index(&self.tasks, by) {
             self.tasks.remove(index);
             self.dirty = true;
             Ok(())
@@ -121,6 +102,7 @@ impl TaskStore for JsonStore {
             return Ok(());
         }
         self.save_tasks()?;
+        self.dirty = false;
         Ok(())
     }
 }
