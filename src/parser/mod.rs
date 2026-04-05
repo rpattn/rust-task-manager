@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap::Subcommand;
+use core::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -7,8 +8,8 @@ use crate::tasks::task::Priority;
 use crate::tasks::task::Status;
 use crate::tasks::taskstore::GetBy;
 use crate::tasks::taskstore::IntoGetBy;
-use crate::tasks::taskstore::TaskField;
 use crate::tasks::taskstore::SortOrder;
+use crate::tasks::taskstore::TaskField;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -20,6 +21,15 @@ pub struct Cli {
 pub enum IdArg {
     Index { index: usize },
     Uuid { uuid: Uuid },
+}
+
+impl fmt::Display for IdArg {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IdArg::Index { index } => write!(f, "{index}"),
+            IdArg::Uuid { uuid } => write!(f, "{uuid}"),
+        }
+    }
 }
 
 impl FromStr for IdArg {
@@ -40,9 +50,9 @@ impl FromStr for IdArg {
 }
 
 // Only allow user to get by unique fields, preserves internal full GetBy
-impl From<IdArg> for GetBy {
-    fn from(id: IdArg) -> Self {
-        match id {
+impl IntoGetBy for IdArg {
+    fn into_get_by(self) -> GetBy {
+        match self {
             IdArg::Index { index } => GetBy::ByIndex(index),
             IdArg::Uuid { uuid } => GetBy::ByUuid(uuid),
         }
@@ -98,10 +108,4 @@ pub enum Command {
 
 pub fn get_args() -> Cli {
     Cli::parse()
-}
-
-impl IntoGetBy for IdArg {
-    fn into_get_by(self) -> GetBy {
-        GetBy::from(self)
-    }
 }

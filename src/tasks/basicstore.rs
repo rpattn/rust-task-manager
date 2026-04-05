@@ -10,29 +10,31 @@ pub struct BasicStore {
 }
 
 impl TaskStore for BasicStore {
-    fn open(&mut self) -> Result<(), TaskStoreError> {
-        Ok(())
-    }
     fn get<B: IntoGetBy>(&self, by: B) -> Option<Task> {
-        get_task_index(&self.tasks, by).and_then(|i| self.tasks.get(i)).cloned()
+        get_task_index(&self.tasks, &by.into_get_by())
+            .and_then(|i| self.tasks.get(i))
+            .cloned()
     }
     fn add(&mut self, task: Task) {
         self.tasks.push(task);
     }
     fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
-        let task_index = get_task_index(&self.tasks, by).ok_or(TaskStoreError::TaskNotFound)?;
+        let id = by.into_get_by();
+        let task_index =
+            get_task_index(&self.tasks, &id).ok_or(TaskStoreError::TaskNotFound { id })?;
         self.tasks
             .get_mut(task_index)
-            .ok_or(TaskStoreError::TaskNotFound)?
+            .expect("index from get_task_index should always be valid")
             .edit(edit);
         Ok(())
     }
     fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError> {
-        if let Some(index) = get_task_index(&self.tasks, by) {
+        let id = by.into_get_by();
+        if let Some(index) = get_task_index(&self.tasks, &id) {
             self.tasks.remove(index);
             Ok(())
         } else {
-            Err(TaskStoreError::TaskNotFound)
+            Err(TaskStoreError::TaskNotFound { id })
         }
     }
     fn get_all(&self, query: Option<&QueryOptions>) -> Vec<Task> {
@@ -44,8 +46,5 @@ impl TaskStore for BasicStore {
     }
     fn clear_all_tasks(&mut self) {
         self.tasks.clear();
-    }
-    fn close(&mut self) -> Result<(), TaskStoreError> {
-        Ok(())
     }
 }

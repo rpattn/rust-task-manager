@@ -1,6 +1,6 @@
 // tests/query_tests.rs
-use rust_task_manager::tasks::taskstore::{QueryOptions, SortOrder, TaskField, TaskStore};
 use rust_task_manager::tasks::task::Priority;
+use rust_task_manager::tasks::taskstore::{QueryOptions, SortOrder, TaskField, TaskStore};
 use rust_task_manager::tasks::{BasicStore, Task};
 
 fn make_task(title: &str, priority: Priority) -> Task {
@@ -54,7 +54,10 @@ fn sort_by_title_asc() {
     let store = store_with_tasks();
     let tasks = store.get_all(Some(&query(0, 10, TaskField::Title, SortOrder::Asc)));
     let titles: Vec<&str> = tasks.iter().map(|t| t.title.as_str()).collect();
-    assert_eq!(titles, vec!["Apple", "Banana", "Cherry", "Date", "Elderberry"]);
+    assert_eq!(
+        titles,
+        vec!["Apple", "Banana", "Cherry", "Date", "Elderberry"]
+    );
 }
 
 #[test]
@@ -62,7 +65,10 @@ fn sort_by_title_desc() {
     let store = store_with_tasks();
     let tasks = store.get_all(Some(&query(0, 10, TaskField::Title, SortOrder::Desc)));
     let titles: Vec<&str> = tasks.iter().map(|t| t.title.as_str()).collect();
-    assert_eq!(titles, vec!["Elderberry", "Date", "Cherry", "Banana", "Apple"]);
+    assert_eq!(
+        titles,
+        vec!["Elderberry", "Date", "Cherry", "Banana", "Apple"]
+    );
 }
 
 #[test]
@@ -87,7 +93,10 @@ fn sort_by_created_asc_preserves_insertion_order() {
     let store = store_with_tasks();
     let tasks = store.get_all(Some(&query(0, 10, TaskField::Created, SortOrder::Asc)));
     let titles: Vec<&str> = tasks.iter().map(|t| t.title.as_str()).collect();
-    assert_eq!(titles, vec!["Banana", "Apple", "Cherry", "Date", "Elderberry"]);
+    assert_eq!(
+        titles,
+        vec!["Banana", "Apple", "Cherry", "Date", "Elderberry"]
+    );
 }
 
 // --- pagination ---
@@ -192,7 +201,16 @@ fn filter_by_status_todo() {
 fn filter_by_status_complete() {
     let mut store = store_with_tasks();
     use rust_task_manager::tasks::task::{Status, TaskEdit};
-    store.edit(0usize, TaskEdit { title: None, priority: None, status: Some(Status::Complete) }).unwrap();
+    store
+        .edit(
+            0usize,
+            TaskEdit {
+                title: None,
+                priority: None,
+                status: Some(Status::Complete),
+            },
+        )
+        .unwrap();
     let tasks = store.get_all(Some(&query_with_filter(TaskField::Status, "done")));
     assert_eq!(tasks.len(), 1);
 }

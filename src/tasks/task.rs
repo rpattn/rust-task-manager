@@ -40,7 +40,7 @@ impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Status::Todo => write!(f, "todo"),
-            Status::Complete => write!(f, "done")
+            Status::Complete => write!(f, "done"),
         }
     }
 }

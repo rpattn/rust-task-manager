@@ -1,8 +1,8 @@
-use crate::parser::{Cli, Command};
+use crate::parser::{Cli, Command, IdArg};
 use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
 use crate::tasks::taskstore::{
-    GetBy, QueryOptions, SortOrder, TaskField, TaskStore, TaskStoreError
+    GetBy, QueryOptions, SortOrder, TaskField, TaskStore, TaskStoreError,
 };
 
 pub struct CommandResult {
@@ -10,10 +10,22 @@ pub struct CommandResult {
     pub message: Option<String>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum CommandError {
+    #[error("not enough arguments passed to {command}")]
+    NotEnoughArgs { command: String },
+    #[error("query error: {reason}")]
+    QueryError { reason: String },
+    #[error("no task found for id: {id}")]
+    TaskNotFound { id: IdArg },
+    #[error(transparent)]
+    Store(#[from] TaskStoreError),
+}
+
 pub fn handle_command<S: TaskStore>(
     args: Cli,
     manager: &mut S,
-) -> Result<CommandResult, TaskStoreError> {
+) -> Result<CommandResult, CommandError> {
     match args.command {
         Some(Command::List {
             page,
@@ -23,6 +35,11 @@ pub fn handle_command<S: TaskStore>(
             filter,
             value,
         }) => {
+            if matches!(filter, Some(TaskField::Created)) {
+                return Err(CommandError::QueryError {
+                    reason: "unsupported filter field".into(),
+                });
+            }
             let query = match (page, size, sort, order, filter, value.clone()) {
                 (None, None, None, None, None, None) => None,
                 _ => Some(QueryOptions {
@@ -40,20 +57,19 @@ pub fn handle_command<S: TaskStore>(
             })
         }
         Some(Command::Get { id }) => {
-            if let Some(taskid) = id {
-                let task = manager.get(taskid);
+            if let Some(id) = id {
+                let task = manager.get(id);
                 if let Some(task) = task {
                     Ok(CommandResult {
                         tasks: Some(vec![task]),
                         message: None,
                     })
                 } else {
-                    Err(TaskStoreError::TaskNotFound)
+                    Err(CommandError::TaskNotFound { id })
                 }
             } else {
-                Ok(CommandResult {
-                    tasks: Some(manager.get_all(None).to_vec()),
-                    message: Some("Supply a task id after get keyword. Tasks in list are: ".into()),
+                Err(CommandError::NotEnoughArgs {
+                    command: "Get".into(),
                 })
             }
         }
@@ -64,7 +80,11 @@ pub fn handle_command<S: TaskStore>(
             if let Some(priority) = priority {
                 task.priority = priority;
             }
-            manager.add(task.clone());
+            let id = *task.get_id();
+            manager.add(task);
+            task = manager.get(id).ok_or(CommandError::TaskNotFound {
+                id: IdArg::Uuid { uuid: id },
+            })?;
             Ok(CommandResult {
                 tasks: Some(vec![task]),
                 message: Some("Added task".into()),
@@ -84,7 +104,7 @@ pub fn handle_command<S: TaskStore>(
                     status,
                 },
             )?;
-            let edited_task = manager.get(id).ok_or(TaskStoreError::TaskNotFound)?;
+            let edited_task = manager.get(id).ok_or(CommandError::TaskNotFound { id })?;
             Ok(CommandResult {
                 tasks: Some(vec![edited_task]),
                 message: Some("Task updated".into()),
@@ -104,9 +124,8 @@ pub fn handle_command<S: TaskStore>(
                     message: Some("Removed the last task in the list".into()),
                 })
             } else {
-                Ok(CommandResult {
-                    tasks: None,
-                    message: Some("Supply a task id".into()),
+                Err(CommandError::NotEnoughArgs {
+                    command: "Remove".into(),
                 })
             }
         }
@@ -119,7 +138,7 @@ pub fn handle_command<S: TaskStore>(
                 })
             } else {
                 Ok(CommandResult {
-                    tasks: Some(manager.get_all(None).to_vec()),
+                    tasks: Some(manager.get_all(None)),
                     message: Some(
                         "Use --force to remove ALL tasks, this cannot be undone!!".into(),
                     ),
@@ -135,14 +154,14 @@ pub fn handle_command<S: TaskStore>(
                     status: Some(Status::Complete),
                 },
             )?;
-            let edited_task = manager.get(id).ok_or(TaskStoreError::TaskNotFound)?;
+            let edited_task = manager.get(id).ok_or(CommandError::TaskNotFound { id })?;
             Ok(CommandResult {
                 tasks: Some(vec![edited_task]),
                 message: Some("Task completed".into()),
             })
         }
         None => Ok(CommandResult {
-            tasks: Some(manager.get_all(None).to_vec()),
+            tasks: Some(manager.get_all(None)),
             message: None,
         }),
     }

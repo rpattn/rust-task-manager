@@ -20,15 +20,20 @@ pub fn priority_to_cell(priority: &Priority) -> Cell {
 }
 
 pub fn print_table(tasks: &[Task]) {
+    if tasks.is_empty() {
+        println!("No tasks found");
+        return;
+    }
+
     let mut table = Table::new();
-    table.set_header(vec!["Status", "Title", "Priority", "Index", "ID"]);
+    table.set_header(vec!["Row", "Status", "Title", "Priority", "ID"]);
 
     for (i, task) in tasks.iter().enumerate() {
         table.add_row(vec![
+            i.to_string().into(),
             status_to_cell(&task.done), // These helpers are in task.rs
             task.title.clone().into(),
             priority_to_cell(&task.priority),
-            i.to_string().into(),
             task.get_id().to_string().into(),
         ]);
     }

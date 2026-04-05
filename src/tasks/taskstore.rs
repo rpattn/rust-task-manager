@@ -1,11 +1,13 @@
+use std::fmt::Display;
+
 use uuid::Uuid;
 
 use crate::tasks::{Task, task::TaskEdit};
 
 #[derive(Debug, thiserror::Error)]
 pub enum TaskStoreError {
-    #[error("task not found")]
-    TaskNotFound,
+    #[error("task not found for id {id}")]
+    TaskNotFound { id: GetBy },
     #[error("backend error: {0}")]
     BackendError(#[from] Box<dyn std::error::Error>),
 }
@@ -15,16 +17,31 @@ pub trait TaskStore {
     fn add(&mut self, task: Task);
     fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError>;
     fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError>;
-    fn open(&mut self) -> Result<(), TaskStoreError>;
     fn get_all(&self, page: Option<&QueryOptions>) -> Vec<Task>;
-    fn close(&mut self) -> Result<(), TaskStoreError>;
     fn clear_all_tasks(&mut self);
+    fn open(&mut self) -> Result<(), TaskStoreError> {
+        Ok(())
+    }
+    fn close(&mut self) -> Result<(), TaskStoreError> {
+        Ok(())
+    }
 }
 
+#[derive(Debug, Clone)]
 pub enum GetBy {
     ByIndex(usize),
     ByUuid(Uuid),
     Last,
+}
+
+impl Display for GetBy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GetBy::ByIndex(id) => write!(f, "{id}"),
+            GetBy::ByUuid(id) => write!(f, "{id}"),
+            GetBy::Last => write!(f, "last"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Copy, clap::ValueEnum)]
@@ -72,11 +89,11 @@ impl IntoGetBy for Uuid {
     }
 }
 
-pub fn get_task_index(tasks: &[Task], by: impl IntoGetBy) -> Option<usize> {
-    match by.into_get_by() {
+pub fn get_task_index(tasks: &[Task], by: &GetBy) -> Option<usize> {
+    match by {
         GetBy::ByIndex(index) => {
-            if index < tasks.len() {
-                Some(index)
+            if *index < tasks.len() {
+                Some(*index)
             } else {
                 None
             }
@@ -88,7 +105,7 @@ pub fn get_task_index(tasks: &[Task], by: impl IntoGetBy) -> Option<usize> {
                 Some(tasks.len() - 1)
             }
         }
-        GetBy::ByUuid(uuid) => tasks.iter().position(|x| x.get_id() == &uuid),
+        GetBy::ByUuid(uuid) => tasks.iter().position(|x| x.get_id() == uuid),
     }
 }
 
@@ -96,14 +113,15 @@ pub fn apply_query(tasks: &[Task], query: &QueryOptions) -> Vec<Task> {
     let mut tasks = tasks.to_vec();
 
     if let Some(filter) = query.filter
-        && let Some(v) = &query.value {
-        tasks.retain(|t| {
-            match filter {
-                TaskField::Title => v == &t.title,
-                TaskField::Priority => v.to_lowercase() == t.priority.to_string().to_lowercase(),
-                TaskField::Created => v == &t.get_created_at().to_string(), //consider removing
-                TaskField::Status => v.to_lowercase() == t.done.to_string().to_lowercase(),
+        && let Some(v) = &query.value
+    {
+        tasks.retain(|t| match filter {
+            TaskField::Title => v == &t.title,
+            TaskField::Priority => v.to_lowercase() == t.priority.to_string().to_lowercase(),
+            TaskField::Created => {
+                unreachable!("Created filter should be rejected before apply_query")
             }
+            TaskField::Status => v.to_lowercase() == t.done.to_string().to_lowercase(),
         });
     };
 

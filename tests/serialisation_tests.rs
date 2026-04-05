@@ -48,10 +48,7 @@ fn save_multiple_tasks_and_reload() {
 
     let mut loaded = JsonStore::new(&path);
     loaded.open().unwrap();
-    let titles: Vec<String> = loaded
-        .get_all(None)
-        .into_iter()
-        .map(|t| t.title).collect();
+    let titles: Vec<String> = loaded.get_all(None).into_iter().map(|t| t.title).collect();
     assert_eq!(titles, vec!["a", "b", "c"]);
 }
 
