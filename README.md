@@ -73,10 +73,10 @@ The codebase is split into clean layers:
 - [x] Comprehensive test suite
 
 ### Next
-- [ ] Filter `list` by status or priority (`--status todo`, `--priority high`)
-- [ ] Sort on list (`--sort priority`, `--sort created`)
+- [x] Filter `list` by status or priority (`--status todo`, `--priority high`)
+- [x] Sort on list (`--sort priority`, `--sort created`)
 - [ ] Config file for storage path (`~/.config/rust-task-manager/config.toml`)
-- [ ] Pagination (`--page`, `--page-size`)
+- [x] Pagination (`--page`, `--page-size`)
 
 ### Stretch
 - [ ] Due dates with `--due` flag and `overdue` command
