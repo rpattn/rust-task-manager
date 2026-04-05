@@ -69,7 +69,7 @@ fn save_preserves_uuid() {
 #[test]
 fn save_empty_manager_and_reload() {
     let (_f, path) = temp_path();
-    let manager = Manager::new(&path);
+    let mut manager = Manager::new(&path);
     manager.close().unwrap();
 
     let mut loaded = Manager::new(&path);
@@ -82,7 +82,16 @@ fn edit_persists_after_reload() {
     let (_f, path) = temp_path();
     let mut manager = Manager::new(&path);
     manager.add(Task::default());
-    manager.edit(0usize, TaskEdit { title: Some("edited".into()), priority: None, status: None }).unwrap();
+    manager
+        .edit(
+            0usize,
+            TaskEdit {
+                title: Some("edited".into()),
+                priority: None,
+                status: None,
+            },
+        )
+        .unwrap();
     manager.close().unwrap();
 
     let mut loaded = Manager::new(&path);
@@ -100,7 +109,16 @@ fn edit_persists_without_prior_mutation() {
 
     let mut loaded = Manager::new(&path);
     loaded.open().unwrap();
-    loaded.edit(0usize, TaskEdit { title: Some("edited".into()), priority: None, status: None }).unwrap();
+    loaded
+        .edit(
+            0usize,
+            TaskEdit {
+                title: Some("edited".into()),
+                priority: None,
+                status: None,
+            },
+        )
+        .unwrap();
     loaded.close().unwrap();
 
     let mut reloaded = Manager::new(&path);

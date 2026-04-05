@@ -3,25 +3,34 @@ use crate::{
     tasks::{
         Task,
         task::TaskEdit,
-        taskstore::{GetBy, IntoGetBy, TaskStore},
+        taskstore::{GetBy, IntoGetBy, TaskStore, TaskStoreError},
     },
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Manager {
     tasks: Vec<Task>,
     filename: String,
     dirty: bool,
 }
 
+// Implementing custom error type for future use
+// e.g. matching on IoError for retry, fallback
 #[derive(Debug, thiserror::Error)]
 pub enum ManagerError {
-    #[error("Task not found")]
-    TaskNotFound,
     #[error("io error: {0}")]
     IoError(#[from] std::io::Error),
     #[error("parse error: {0}")]
     ParseError(#[from] serde_json::Error),
+}
+
+impl From<ManagerError> for TaskStoreError {
+    fn from(e: ManagerError) -> Self {
+        match e {
+            ManagerError::IoError(e) => TaskStoreError::BackendError(Box::new(e)),
+            ManagerError::ParseError(e) => TaskStoreError::BackendError(Box::new(e)),
+        }
+    }
 }
 
 impl Manager {
@@ -71,8 +80,9 @@ impl Manager {
 }
 
 impl TaskStore for Manager {
-    fn open(&mut self) -> Result<(), ManagerError> {
-        self.load_tasks()
+    fn open(&mut self) -> Result<(), TaskStoreError> {
+        self.load_tasks()?;
+        Ok(())
     }
     fn get<B: IntoGetBy>(&self, by: B) -> Option<&Task> {
         self.get_index(by).and_then(|i| self.tasks.get(i))
@@ -81,22 +91,22 @@ impl TaskStore for Manager {
         self.tasks.push(task);
         self.dirty = true;
     }
-    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), ManagerError> {
-        let task_index = self.get_index(by).ok_or(ManagerError::TaskNotFound)?;
+    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
+        let task_index = self.get_index(by).ok_or(TaskStoreError::TaskNotFound)?;
         self.tasks
             .get_mut(task_index)
-            .ok_or(ManagerError::TaskNotFound)?
+            .ok_or(TaskStoreError::TaskNotFound)?
             .edit(edit);
         self.dirty = true;
         Ok(())
     }
-    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError> {
+    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError> {
         if let Some(index) = self.get_index(by) {
             self.tasks.remove(index);
             self.dirty = true;
             Ok(())
         } else {
-            Err(ManagerError::TaskNotFound)
+            Err(TaskStoreError::TaskNotFound)
         }
     }
     fn get_all(&self) -> &[Task] {
@@ -106,10 +116,11 @@ impl TaskStore for Manager {
         self.tasks.clear();
         self.dirty = true;
     }
-    fn close(&self) -> Result<(), ManagerError> {
+    fn close(&mut self) -> Result<(), TaskStoreError> {
         if !self.dirty {
             return Ok(());
         }
-        self.save_tasks()
+        self.save_tasks()?;
+        Ok(())
     }
 }

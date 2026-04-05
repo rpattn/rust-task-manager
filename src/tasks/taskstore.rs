@@ -1,15 +1,23 @@
 use uuid::Uuid;
 
-use crate::tasks::{ManagerError, Task, task::TaskEdit};
+use crate::tasks::{Task, task::TaskEdit};
+
+#[derive(Debug, thiserror::Error)]
+pub enum TaskStoreError {
+    #[error("task not found")]
+    TaskNotFound,
+    #[error("backend error: {0}")]
+    BackendError(#[from] Box<dyn std::error::Error>),
+}
 
 pub trait TaskStore {
     fn get<B: IntoGetBy>(&self, by: B) -> Option<&Task>;
     fn add(&mut self, task: Task);
-    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), ManagerError>;
-    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError>;
-    fn open(&mut self) -> Result<(), ManagerError>;
+    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError>;
+    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError>;
+    fn open(&mut self) -> Result<(), TaskStoreError>;
     fn get_all(&self) -> &[Task];
-    fn close(&self) -> Result<(), ManagerError>;
+    fn close(&mut self) -> Result<(), TaskStoreError>;
     fn clear_all_tasks(&mut self);
 }
 

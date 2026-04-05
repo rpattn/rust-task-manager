@@ -10,7 +10,7 @@ fn make_task(title: &str) -> Task {
 }
 
 fn manager_with_tasks(titles: &[&str]) -> Manager {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     for title in titles {
         manager.add(make_task(title));
     }
@@ -21,7 +21,7 @@ fn manager_with_tasks(titles: &[&str]) -> Manager {
 
 #[test]
 fn add_single_task_increases_count() {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     manager.add(Task::default());
     assert_eq!(manager.get_all().len(), 1);
 }
@@ -51,7 +51,7 @@ fn get_by_index_out_of_bounds_returns_none() {
 
 #[test]
 fn get_by_index_on_empty_manager_returns_none() {
-    let manager = Manager::default();
+    let manager = Manager::new("file.json".into());
     assert!(manager.get(0usize).is_none());
 }
 
@@ -59,7 +59,7 @@ fn get_by_index_on_empty_manager_returns_none() {
 
 #[test]
 fn get_by_uuid_returns_correct_task() {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     let task = make_task("find me");
     let id = *task.get_id();
     manager.add(task);
@@ -86,7 +86,7 @@ fn get_last_returns_final_task() {
 
 #[test]
 fn get_last_on_empty_returns_none() {
-    let manager = Manager::default();
+    let manager = Manager::new("file.json".into());
     assert!(manager.get(GetBy::Last).is_none());
 }
 
@@ -95,14 +95,34 @@ fn get_last_on_empty_returns_none() {
 #[test]
 fn edit_updates_title() {
     let mut manager = manager_with_tasks(&["old"]);
-    manager.edit(0usize, TaskEdit { title: Some("new".into()), priority: None, status: None }).unwrap();
+    manager
+        .edit(
+            0usize,
+            TaskEdit {
+                title: Some("new".into()),
+                priority: None,
+                status: None,
+            },
+        )
+        .unwrap();
     assert_eq!(manager.get(0usize).unwrap().title, "new");
 }
 
 #[test]
 fn edit_on_missing_returns_err() {
-    let mut manager = Manager::default();
-    assert!(manager.edit(0usize, TaskEdit { title: Some("x".into()), priority: None, status: None }).is_err());
+    let mut manager = Manager::new("file.json".into());
+    assert!(
+        manager
+            .edit(
+                0usize,
+                TaskEdit {
+                    title: Some("x".into()),
+                    priority: None,
+                    status: None
+                }
+            )
+            .is_err()
+    );
 }
 
 // --- remove ---
@@ -123,7 +143,7 @@ fn remove_by_index_removes_correct_task() {
 
 #[test]
 fn remove_by_uuid_removes_correct_task() {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     let task = make_task("target");
     let id = *task.get_id();
     manager.add(task);
@@ -145,7 +165,7 @@ fn remove_last_removes_final_task() {
 
 #[test]
 fn remove_last_on_empty_returns_err() {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     assert!(manager.remove(GetBy::Last).is_err());
 }
 
@@ -172,7 +192,7 @@ fn clear_all_tasks_empties_manager() {
 
 #[test]
 fn clear_on_empty_manager_is_safe() {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     manager.clear_all_tasks();
     assert_eq!(manager.get_all().len(), 0);
 }
@@ -181,7 +201,7 @@ fn clear_on_empty_manager_is_safe() {
 
 #[test]
 fn get_all_on_empty_returns_empty_slice() {
-    let manager = Manager::default();
+    let manager = Manager::new("file.json".into());
     assert!(manager.get_all().is_empty());
 }
 
@@ -195,7 +215,7 @@ fn get_all_returns_all_tasks() {
 
 #[test]
 fn add_task_with_high_priority() {
-    let mut manager = Manager::default();
+    let mut manager = Manager::new("file.json".into());
     let mut task = Task::default();
     task.priority = Priority::High;
     manager.add(task);

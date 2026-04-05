@@ -1,7 +1,7 @@
 use crate::parser::{Cli, Command};
+use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
-use crate::tasks::taskstore::{GetBy, TaskStore};
-use crate::tasks::{ManagerError, Task};
+use crate::tasks::taskstore::{GetBy, TaskStore, TaskStoreError};
 
 pub struct CommandResult {
     pub tasks: Option<Vec<Task>>,
@@ -11,7 +11,7 @@ pub struct CommandResult {
 pub fn handle_command<S: TaskStore>(
     args: Cli,
     manager: &mut S,
-) -> Result<CommandResult, ManagerError> {
+) -> Result<CommandResult, TaskStoreError> {
     match args.command {
         Some(Command::Get { id }) => {
             if let Some(taskid) = id {
@@ -22,7 +22,7 @@ pub fn handle_command<S: TaskStore>(
                         message: None,
                     })
                 } else {
-                    Err(ManagerError::TaskNotFound)
+                    Err(TaskStoreError::TaskNotFound)
                 }
             } else {
                 Ok(CommandResult {
@@ -58,7 +58,7 @@ pub fn handle_command<S: TaskStore>(
                     status,
                 },
             )?;
-            let edited_task = manager.get(id).ok_or(ManagerError::TaskNotFound)?.clone();
+            let edited_task = manager.get(id).ok_or(TaskStoreError::TaskNotFound)?.clone();
             Ok(CommandResult {
                 tasks: Some(vec![edited_task]),
                 message: Some("Task updated".into()),
@@ -109,7 +109,7 @@ pub fn handle_command<S: TaskStore>(
                     status: Some(Status::Complete),
                 },
             )?;
-            let edited_task = manager.get(id).ok_or(ManagerError::TaskNotFound)?.clone();
+            let edited_task = manager.get(id).ok_or(TaskStoreError::TaskNotFound)?.clone();
             Ok(CommandResult {
                 tasks: Some(vec![edited_task]),
                 message: Some("Task completed".into()),
