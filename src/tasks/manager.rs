@@ -2,6 +2,7 @@ use crate::{
     store::{load, save},
     tasks::{
         Task,
+        task::TaskEdit,
         taskstore::{GetBy, IntoGetBy, TaskStore},
     },
 };
@@ -10,6 +11,7 @@ use crate::{
 pub struct Manager {
     tasks: Vec<Task>,
     filename: String,
+    dirty: bool,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -27,6 +29,7 @@ impl Manager {
         Manager {
             tasks: Vec::default(),
             filename: filename.into(),
+            dirty: false,
         }
     }
     fn get_index(&self, by: impl IntoGetBy) -> Option<usize> {
@@ -53,7 +56,10 @@ impl Manager {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(e) => return Err(e.into()),
             Ok(s) if s.is_empty() => return Ok(()),
-            Ok(s) => self.tasks = serde_json::from_str(&s)?,
+            Ok(s) => {
+                self.tasks = serde_json::from_str(&s)?;
+                self.dirty = false;
+            }
         }
         Ok(())
     }
@@ -73,13 +79,21 @@ impl TaskStore for Manager {
     }
     fn add(&mut self, task: Task) {
         self.tasks.push(task);
+        self.dirty = true;
     }
-    fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task> {
-        self.get_index(by).and_then(|i| self.tasks.get_mut(i))
+    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), ManagerError> {
+        let task_index = self.get_index(by).ok_or(ManagerError::TaskNotFound)?;
+        self.tasks
+            .get_mut(task_index)
+            .ok_or(ManagerError::TaskNotFound)?
+            .edit(edit);
+        self.dirty = true;
+        Ok(())
     }
     fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError> {
         if let Some(index) = self.get_index(by) {
             self.tasks.remove(index);
+            self.dirty = true;
             Ok(())
         } else {
             Err(ManagerError::TaskNotFound)
@@ -90,8 +104,12 @@ impl TaskStore for Manager {
     }
     fn clear_all_tasks(&mut self) {
         self.tasks.clear();
+        self.dirty = true;
     }
     fn close(&self) -> Result<(), ManagerError> {
+        if !self.dirty {
+            return Ok(());
+        }
         self.save_tasks()
     }
 }

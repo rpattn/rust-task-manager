@@ -4,6 +4,7 @@ use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::tasks::task::Priority;
+use crate::tasks::task::Status;
 use crate::tasks::taskstore::GetBy;
 use crate::tasks::taskstore::IntoGetBy;
 
@@ -62,6 +63,8 @@ pub enum Command {
         title: Option<String>,
         #[arg(long, short)]
         priority: Option<Priority>,
+        #[arg(long, short)]
+        status: Option<Status>,
     },
     Remove {
         id: Option<IdArg>,

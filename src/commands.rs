@@ -1,17 +1,11 @@
 use crate::parser::{Cli, Command};
-use crate::tasks::task::TaskEdit;
+use crate::tasks::task::{Status, TaskEdit};
 use crate::tasks::taskstore::{GetBy, TaskStore};
 use crate::tasks::{ManagerError, Task};
 
 pub struct CommandResult {
     pub tasks: Option<Vec<Task>>,
-    pub outcome: CommandOutcome,
     pub message: Option<String>,
-}
-
-pub enum CommandOutcome {
-    Mutated,
-    ReadOnly,
 }
 
 pub fn handle_command<S: TaskStore>(
@@ -25,7 +19,6 @@ pub fn handle_command<S: TaskStore>(
                 if let Some(task) = task {
                     Ok(CommandResult {
                         tasks: Some(vec![task.clone()]),
-                        outcome: CommandOutcome::ReadOnly,
                         message: None,
                     })
                 } else {
@@ -34,7 +27,6 @@ pub fn handle_command<S: TaskStore>(
             } else {
                 Ok(CommandResult {
                     tasks: Some(manager.get_all().to_vec()),
-                    outcome: CommandOutcome::ReadOnly,
                     message: Some("Supply a task id after get keyword. Tasks in list are: ".into()),
                 })
             }
@@ -49,7 +41,6 @@ pub fn handle_command<S: TaskStore>(
             manager.add(task.clone());
             Ok(CommandResult {
                 tasks: Some(vec![task]),
-                outcome: CommandOutcome::Mutated,
                 message: Some("Added task".into()),
             })
         }
@@ -57,12 +48,19 @@ pub fn handle_command<S: TaskStore>(
             id,
             title,
             priority,
+            status,
         }) => {
-            let task = manager.get_mut(id).ok_or(ManagerError::TaskNotFound)?;
-            task.edit(TaskEdit { title, priority });
+            manager.edit(
+                id,
+                TaskEdit {
+                    title,
+                    priority,
+                    status,
+                },
+            )?;
+            let edited_task = manager.get(id).ok_or(ManagerError::TaskNotFound)?.clone();
             Ok(CommandResult {
-                tasks: Some(vec![task.clone()]),
-                outcome: CommandOutcome::Mutated,
+                tasks: Some(vec![edited_task]),
                 message: Some("Task updated".into()),
             })
         }
@@ -71,20 +69,17 @@ pub fn handle_command<S: TaskStore>(
                 manager.remove(taskid)?;
                 Ok(CommandResult {
                     tasks: None,
-                    outcome: CommandOutcome::Mutated,
                     message: Some("Removed task".into()),
                 })
             } else if last {
                 manager.remove(GetBy::Last)?;
                 Ok(CommandResult {
                     tasks: None,
-                    outcome: CommandOutcome::Mutated,
                     message: Some("Removed the last task in the list".into()),
                 })
             } else {
                 Ok(CommandResult {
                     tasks: None,
-                    outcome: CommandOutcome::ReadOnly,
                     message: Some("Supply a task id".into()),
                 })
             }
@@ -94,13 +89,11 @@ pub fn handle_command<S: TaskStore>(
                 manager.clear_all_tasks();
                 Ok(CommandResult {
                     tasks: None,
-                    outcome: CommandOutcome::Mutated,
                     message: Some("Cleared all tasks!".into()),
                 })
             } else {
                 Ok(CommandResult {
                     tasks: Some(manager.get_all().to_vec()),
-                    outcome: CommandOutcome::ReadOnly,
                     message: Some(
                         "Use --force to remove ALL tasks, this cannot be undone!!".into(),
                     ),
@@ -108,17 +101,22 @@ pub fn handle_command<S: TaskStore>(
             }
         }
         Some(Command::Complete { id }) => {
-            let task = manager.get_mut(id).ok_or(ManagerError::TaskNotFound)?;
-            task.mark_complete();
+            manager.edit(
+                id,
+                TaskEdit {
+                    title: None,
+                    priority: None,
+                    status: Some(Status::Complete),
+                },
+            )?;
+            let edited_task = manager.get(id).ok_or(ManagerError::TaskNotFound)?.clone();
             Ok(CommandResult {
-                tasks: Some(vec![task.clone()]),
-                outcome: CommandOutcome::Mutated,
+                tasks: Some(vec![edited_task]),
                 message: Some("Task completed".into()),
             })
         }
         None => Ok(CommandResult {
             tasks: Some(manager.get_all().to_vec()),
-            outcome: CommandOutcome::ReadOnly,
             message: None,
         }),
     }

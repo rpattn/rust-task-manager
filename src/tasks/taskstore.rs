@@ -1,11 +1,11 @@
 use uuid::Uuid;
 
-use crate::tasks::{ManagerError, Task};
+use crate::tasks::{ManagerError, Task, task::TaskEdit};
 
 pub trait TaskStore {
     fn get<B: IntoGetBy>(&self, by: B) -> Option<&Task>;
     fn add(&mut self, task: Task);
-    fn get_mut(&mut self, by: impl IntoGetBy) -> Option<&mut Task>;
+    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), ManagerError>;
     fn remove(&mut self, by: impl IntoGetBy) -> Result<(), ManagerError>;
     fn open(&mut self) -> Result<(), ManagerError>;
     fn get_all(&self) -> &[Task];

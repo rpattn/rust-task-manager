@@ -20,7 +20,7 @@ pub enum Priority {
     High,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, clap::ValueEnum)]
 pub enum Status {
     Todo,
     Complete,
@@ -30,6 +30,7 @@ pub enum Status {
 pub struct TaskEdit {
     pub title: Option<String>,
     pub priority: Option<Priority>,
+    pub status: Option<Status>,
 }
 
 impl Default for Task {
@@ -67,6 +68,9 @@ impl Task {
         }
         if let Some(priority) = fields.priority {
             self.priority = priority;
+        }
+        if let Some(status) = fields.status {
+            self.done = status;
         }
     }
 }

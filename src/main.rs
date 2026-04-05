@@ -1,4 +1,4 @@
-use rust_task_manager::commands::{CommandOutcome, handle_command};
+use rust_task_manager::commands::handle_command;
 use rust_task_manager::display::print_table;
 use rust_task_manager::parser::get_args;
 use rust_task_manager::tasks::Manager;
@@ -31,9 +31,7 @@ fn main() {
         println!("{message}");
     }
 
-    if let CommandOutcome::Mutated = result.outcome
-        && let Err(e) = manager.close()
-    {
+    if let Err(e) = manager.close() {
         println!("{e}");
     }
 

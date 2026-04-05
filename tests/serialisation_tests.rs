@@ -1,3 +1,4 @@
+use rust_task_manager::tasks::task::TaskEdit;
 // tests/serialization_tests.rs
 use rust_task_manager::tasks::taskstore::TaskStore;
 use rust_task_manager::tasks::{Manager, Task};
@@ -74,4 +75,35 @@ fn save_empty_manager_and_reload() {
     let mut loaded = Manager::new(&path);
     loaded.open().unwrap();
     assert_eq!(loaded.get_all().len(), 0);
+}
+
+#[test]
+fn edit_persists_after_reload() {
+    let (_f, path) = temp_path();
+    let mut manager = Manager::new(&path);
+    manager.add(Task::default());
+    manager.edit(0usize, TaskEdit { title: Some("edited".into()), priority: None, status: None }).unwrap();
+    manager.close().unwrap();
+
+    let mut loaded = Manager::new(&path);
+    loaded.open().unwrap();
+    assert_eq!(loaded.get_all()[0].title, "edited");
+}
+
+#[test]
+fn edit_persists_without_prior_mutation() {
+    let (_f, path) = temp_path();
+
+    let mut manager = Manager::new(&path);
+    manager.add(Task::default());
+    manager.close().unwrap();
+
+    let mut loaded = Manager::new(&path);
+    loaded.open().unwrap();
+    loaded.edit(0usize, TaskEdit { title: Some("edited".into()), priority: None, status: None }).unwrap();
+    loaded.close().unwrap();
+
+    let mut reloaded = Manager::new(&path);
+    reloaded.open().unwrap();
+    assert_eq!(reloaded.get_all()[0].title, "edited");
 }

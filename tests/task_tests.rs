@@ -49,6 +49,7 @@ fn edit_updates_title() {
     task.edit(TaskEdit {
         title: Some("new title".into()),
         priority: None,
+        status: None,
     });
     assert_eq!(task.title, "new title");
 }
@@ -59,6 +60,7 @@ fn edit_updates_priority() {
     task.edit(TaskEdit {
         title: None,
         priority: Some(Priority::High),
+        status: None,
     });
     assert_eq!(task.priority, Priority::High);
 }
@@ -70,6 +72,7 @@ fn edit_with_all_none_is_no_op() {
     task.edit(TaskEdit {
         title: None,
         priority: None,
+        status: None,
     });
     assert_eq!(task.title, original_title);
     assert_eq!(task.priority, Priority::Low);
@@ -82,6 +85,7 @@ fn edit_partial_only_changes_provided_fields() {
     task.edit(TaskEdit {
         title: Some("updated".into()),
         priority: None,
+        status: None,
     });
     assert_eq!(task.title, "updated");
     assert_eq!(task.priority, Priority::High); // unchanged

@@ -1,5 +1,5 @@
 // tests/manager_tests.rs
-use rust_task_manager::tasks::task::Priority;
+use rust_task_manager::tasks::task::{Priority, TaskEdit};
 use rust_task_manager::tasks::taskstore::{GetBy, TaskStore};
 use rust_task_manager::tasks::{Manager, Task};
 
@@ -90,19 +90,19 @@ fn get_last_on_empty_returns_none() {
     assert!(manager.get(GetBy::Last).is_none());
 }
 
-// --- get_mut ---
+// --- edit ---
 
 #[test]
-fn get_mut_allows_title_update() {
+fn edit_updates_title() {
     let mut manager = manager_with_tasks(&["old"]);
-    manager.get_mut(0usize).unwrap().title = "new".into();
+    manager.edit(0usize, TaskEdit { title: Some("new".into()), priority: None, status: None }).unwrap();
     assert_eq!(manager.get(0usize).unwrap().title, "new");
 }
 
 #[test]
-fn get_mut_on_missing_returns_none() {
+fn edit_on_missing_returns_err() {
     let mut manager = Manager::default();
-    assert!(manager.get_mut(0usize).is_none());
+    assert!(manager.edit(0usize, TaskEdit { title: Some("x".into()), priority: None, status: None }).is_err());
 }
 
 // --- remove ---
