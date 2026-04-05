@@ -59,7 +59,7 @@ The codebase is split into clean layers:
 | Basic store | `src/tasks/basicstore.rs` | In-memory implementation (used in tests) |
 | Display | `src/display` | Table rendering via `comfy_table` |
 
-The `TaskStore` trait is the core abstraction - all command logic is written against the trait, not any concrete backend. This is what allows the store to be swapped out (JSON  SQLite) without touching business logic.
+The `TaskStore` trait is the core abstraction - all command logic is written against the trait, not any concrete backend. This is what allows the store to be swapped out (JSON -> SQLite) without touching business logic.
 
 ## Dependencies
 
@@ -74,7 +74,7 @@ The `TaskStore` trait is the core abstraction - all command logic is written aga
 
 ## Roadmap
 
-The planned trajectory is CLI  API server  richer data model, each phase building on the last.
+The planned trajectory is CLI -> API server -> richer data model, each phase building on the last.
 
 ### Done
 
@@ -103,7 +103,7 @@ The planned trajectory is CLI  API server  richer data model, each phase build
 
 ### Phase 2 - SQLite Backend
 
-- [ ] Fix `TaskStore` trait object safety (`impl IntoGetBy`  `GetBy` in method signatures)
+- [ ] Fix `TaskStore` trait object safety (`impl IntoGetBy` -> `GetBy` in method signatures)
 - [ ] `SqliteStore` implementing `TaskStore` via `sqlx`
 - [ ] Schema migrations
 - [ ] Runtime backend selection from config (`Box<dyn TaskStore>`)
@@ -142,7 +142,7 @@ The planned trajectory is CLI  API server  richer data model, each phase build
 
 This is where GraphQL starts earning its keep - nested and relational data is where it pulls ahead of REST.
 
-- [ ] Subtasks (`parent_id`  recursive `Task` type in GraphQL)
+- [ ] Subtasks (`parent_id` -> recursive `Task` type in GraphQL)
 - [ ] Tags (many-to-many)
 - [ ] Due dates + `overdue` query
 - [ ] Comments (append-only log per task)
