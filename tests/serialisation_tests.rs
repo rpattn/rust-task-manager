@@ -23,8 +23,8 @@ fn save_and_load_round_trip() {
     let mut loaded = JsonStore::new(&path);
     loaded.open().unwrap();
 
-    assert_eq!(loaded.get_all().len(), 1);
-    assert_eq!(loaded.get_all()[0].title, "persisted");
+    assert_eq!(loaded.get_all(None).len(), 1);
+    assert_eq!(loaded.get_all(None)[0].title, "persisted");
 }
 
 #[test]
@@ -32,7 +32,7 @@ fn load_missing_file_is_ok() {
     let mut manager = JsonStore::new("nonexistent_file_xyz.json");
     let result = manager.open();
     assert!(result.is_ok());
-    assert_eq!(manager.get_all().len(), 0);
+    assert_eq!(manager.get_all(None).len(), 0);
 }
 
 #[test]
@@ -48,7 +48,10 @@ fn save_multiple_tasks_and_reload() {
 
     let mut loaded = JsonStore::new(&path);
     loaded.open().unwrap();
-    let titles: Vec<&str> = loaded.get_all().iter().map(|t| t.title.as_str()).collect();
+    let titles: Vec<String> = loaded
+        .get_all(None)
+        .into_iter()
+        .map(|t| t.title).collect();
     assert_eq!(titles, vec!["a", "b", "c"]);
 }
 
@@ -63,7 +66,7 @@ fn save_preserves_uuid() {
 
     let mut loaded = JsonStore::new(&path);
     loaded.open().unwrap();
-    assert_eq!(loaded.get_all()[0].get_id(), &original_id);
+    assert_eq!(loaded.get_all(None)[0].get_id(), &original_id);
 }
 
 #[test]
@@ -74,7 +77,7 @@ fn save_empty_manager_and_reload() {
 
     let mut loaded = JsonStore::new(&path);
     loaded.open().unwrap();
-    assert_eq!(loaded.get_all().len(), 0);
+    assert_eq!(loaded.get_all(None).len(), 0);
 }
 
 #[test]
@@ -96,7 +99,7 @@ fn edit_persists_after_reload() {
 
     let mut loaded = JsonStore::new(&path);
     loaded.open().unwrap();
-    assert_eq!(loaded.get_all()[0].title, "edited");
+    assert_eq!(loaded.get_all(None)[0].title, "edited");
 }
 
 #[test]
@@ -123,5 +126,5 @@ fn edit_persists_without_prior_mutation() {
 
     let mut reloaded = JsonStore::new(&path);
     reloaded.open().unwrap();
-    assert_eq!(reloaded.get_all()[0].title, "edited");
+    assert_eq!(reloaded.get_all(None)[0].title, "edited");
 }

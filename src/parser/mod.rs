@@ -7,6 +7,8 @@ use crate::tasks::task::Priority;
 use crate::tasks::task::Status;
 use crate::tasks::taskstore::GetBy;
 use crate::tasks::taskstore::IntoGetBy;
+use crate::tasks::taskstore::TaskField;
+use crate::tasks::taskstore::SortOrder;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -49,6 +51,20 @@ impl From<IdArg> for GetBy {
 
 #[derive(Subcommand)]
 pub enum Command {
+    List {
+        #[arg(long)]
+        page: Option<usize>,
+        #[arg(long)]
+        size: Option<usize>,
+        #[arg(long)]
+        sort: Option<TaskField>,
+        #[arg(long)]
+        order: Option<SortOrder>,
+        #[arg(long)]
+        filter: Option<TaskField>,
+        #[arg(long, short)]
+        value: Option<String>,
+    },
     Get {
         id: Option<IdArg>,
     },

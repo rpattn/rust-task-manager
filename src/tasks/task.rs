@@ -13,17 +13,36 @@ pub struct Task {
     created: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, clap::ValueEnum)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
 pub enum Priority {
     Low,
     Medium,
     High,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, clap::ValueEnum)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
 pub enum Status {
     Todo,
     Complete,
+}
+
+impl fmt::Display for Priority {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Priority::Low => write!(f, "low"),
+            Priority::Medium => write!(f, "medium"),
+            Priority::High => write!(f, "high"),
+        }
+    }
+}
+
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Status::Todo => write!(f, "todo"),
+            Status::Complete => write!(f, "done")
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -73,5 +92,8 @@ impl Task {
         if let Some(status) = fields.status {
             self.done = status;
         }
+    }
+    pub fn get_created_at(&self) -> DateTime<Utc> {
+        self.created
     }
 }

@@ -3,7 +3,9 @@ use crate::{
     tasks::{
         Task,
         task::TaskEdit,
-        taskstore::{IntoGetBy, TaskStore, TaskStoreError, get_task_index},
+        taskstore::{
+            IntoGetBy, QueryOptions, TaskStore, TaskStoreError, apply_query, get_task_index
+        },
     },
 };
 
@@ -65,8 +67,8 @@ impl TaskStore for JsonStore {
         self.load_tasks()?;
         Ok(())
     }
-    fn get<B: IntoGetBy>(&self, by: B) -> Option<&Task> {
-        get_task_index(&self.tasks, by).and_then(|i| self.tasks.get(i))
+    fn get<B: IntoGetBy>(&self, by: B) -> Option<Task> {
+        get_task_index(&self.tasks, by).and_then(|i| self.tasks.get(i)).cloned()
     }
     fn add(&mut self, task: Task) {
         self.tasks.push(task);
@@ -90,8 +92,12 @@ impl TaskStore for JsonStore {
             Err(TaskStoreError::TaskNotFound)
         }
     }
-    fn get_all(&self) -> &[Task] {
-        &self.tasks
+    fn get_all(&self, query: Option<&QueryOptions>) -> Vec<Task> {
+        let Some(query) = query else {
+            return self.tasks.clone();
+        };
+
+        apply_query(&self.tasks, query)
     }
     fn clear_all_tasks(&mut self) {
         self.tasks.clear();

@@ -23,13 +23,13 @@ fn manager_with_tasks(titles: &[&str]) -> BasicStore {
 fn add_single_task_increases_count() {
     let mut manager = BasicStore::default();
     manager.add(Task::default());
-    assert_eq!(manager.get_all().len(), 1);
+    assert_eq!(manager.get_all(None).len(), 1);
 }
 
 #[test]
 fn add_multiple_tasks_preserves_order() {
     let manager = manager_with_tasks(&["first", "second", "third"]);
-    let tasks = manager.get_all();
+    let tasks = manager.get_all(None);
     assert_eq!(tasks[0].title, "first");
     assert_eq!(tasks[1].title, "second");
     assert_eq!(tasks[2].title, "third");
@@ -131,14 +131,14 @@ fn edit_on_missing_returns_err() {
 fn remove_by_index_decreases_count() {
     let mut manager = manager_with_tasks(&["a", "b"]);
     manager.remove(0usize).unwrap();
-    assert_eq!(manager.get_all().len(), 1);
+    assert_eq!(manager.get_all(None).len(), 1);
 }
 
 #[test]
 fn remove_by_index_removes_correct_task() {
     let mut manager = manager_with_tasks(&["keep", "remove"]);
     manager.remove(1usize).unwrap();
-    assert_eq!(manager.get_all()[0].title, "keep");
+    assert_eq!(manager.get_all(None)[0].title, "keep");
 }
 
 #[test]
@@ -151,16 +151,16 @@ fn remove_by_uuid_removes_correct_task() {
 
     manager.remove(id).unwrap();
 
-    assert_eq!(manager.get_all().len(), 1);
-    assert_eq!(manager.get_all()[0].title, "bystander");
+    assert_eq!(manager.get_all(None).len(), 1);
+    assert_eq!(manager.get_all(None)[0].title, "bystander");
 }
 
 #[test]
 fn remove_last_removes_final_task() {
     let mut manager = manager_with_tasks(&["first", "second"]);
     manager.remove(GetBy::Last).unwrap();
-    assert_eq!(manager.get_all().len(), 1);
-    assert_eq!(manager.get_all()[0].title, "first");
+    assert_eq!(manager.get_all(None).len(), 1);
+    assert_eq!(manager.get_all(None)[0].title, "first");
 }
 
 #[test]
@@ -187,14 +187,14 @@ fn remove_unknown_uuid_returns_err() {
 fn clear_all_tasks_empties_manager() {
     let mut manager = manager_with_tasks(&["a", "b", "c"]);
     manager.clear_all_tasks();
-    assert_eq!(manager.get_all().len(), 0);
+    assert_eq!(manager.get_all(None).len(), 0);
 }
 
 #[test]
 fn clear_on_empty_manager_is_safe() {
     let mut manager = BasicStore::default();
     manager.clear_all_tasks();
-    assert_eq!(manager.get_all().len(), 0);
+    assert_eq!(manager.get_all(None).len(), 0);
 }
 
 // --- get_all ---
@@ -202,13 +202,13 @@ fn clear_on_empty_manager_is_safe() {
 #[test]
 fn get_all_on_empty_returns_empty_slice() {
     let manager = BasicStore::default();
-    assert!(manager.get_all().is_empty());
+    assert!(manager.get_all(None).is_empty());
 }
 
 #[test]
 fn get_all_returns_all_tasks() {
     let manager = manager_with_tasks(&["a", "b", "c"]);
-    assert_eq!(manager.get_all().len(), 3);
+    assert_eq!(manager.get_all(None).len(), 3);
 }
 
 // --- priority ---
