@@ -1,4 +1,4 @@
-use std::{fs, io, path::{PathBuf}};
+use std::{fs, io, path::PathBuf};
 
 pub fn save(filepath: &PathBuf, text: &str) -> Result<(), io::Error> {
     // create parent dir if filename includes folders

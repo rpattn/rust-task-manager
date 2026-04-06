@@ -1,17 +1,24 @@
 use rust_task_manager::commands::handle_command;
-use rust_task_manager::config::{Config};
+use rust_task_manager::config::Config;
 use rust_task_manager::display::print_table;
 use rust_task_manager::parser::get_args;
 use rust_task_manager::tasks::JsonStore;
 use rust_task_manager::tasks::taskstore::TaskStore;
 
 fn main() {
-    let config = Config::default();
+    let mut config = Config::default();
+    if let Err(e) = config.load_config() {
+        eprintln!("Warning: could not load config: {e}");
+        // continues with defaults
+    }
 
     let mut manager = JsonStore::new(config.get_tasks_filepath());
     match manager.open() {
-        Ok(()) => {}
+        Ok(()) => {
+            println!("Fetched tasks from {}", config.tasks_filename);
+        }
         Err(e) => {
+            println!("Error fetching tasks from {}", config.tasks_filename);
             println!("{e}");
         }
     }

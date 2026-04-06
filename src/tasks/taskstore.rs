@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::tasks::{Task, task::TaskEdit};
@@ -44,7 +45,7 @@ impl Display for GetBy {
     }
 }
 
-#[derive(Clone, Debug, Copy, clap::ValueEnum)]
+#[derive(Clone, Debug, Copy, Serialize, Deserialize, clap::ValueEnum)]
 pub enum TaskField {
     Title,
     Priority,
@@ -52,12 +53,13 @@ pub enum TaskField {
     Status,
 }
 
-#[derive(Clone, Debug, Copy, clap::ValueEnum)]
+#[derive(Clone, Debug, Copy, Serialize, Deserialize, clap::ValueEnum)]
 pub enum SortOrder {
     Asc,
     Desc,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct QueryOptions {
     pub page: usize,
     pub page_size: usize,
@@ -65,6 +67,19 @@ pub struct QueryOptions {
     pub sort_order: SortOrder,
     pub filter: Option<TaskField>,
     pub value: Option<String>,
+}
+
+impl Default for QueryOptions {
+    fn default() -> Self {
+        QueryOptions {
+            page: 0usize,
+            page_size: 5usize,
+            sort_field: TaskField::Created,
+            sort_order: SortOrder::Asc,
+            filter: Some(TaskField::Status),
+            value: Some(String::from("todo")),
+        }
+    }
 }
 
 pub trait IntoGetBy {

@@ -1,10 +1,8 @@
-use crate::config::{Config};
+use crate::config::Config;
 use crate::parser::{Cli, Command, IdArg};
 use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
-use crate::tasks::taskstore::{
-    GetBy, QueryOptions, TaskField, TaskStore, TaskStoreError,
-};
+use crate::tasks::taskstore::{GetBy, QueryOptions, TaskField, TaskStore, TaskStoreError};
 
 pub struct CommandResult {
     pub tasks: Option<Vec<Task>>,
@@ -57,7 +55,9 @@ pub fn handle_command<S: TaskStore>(
             })
         }
         Some(Command::Get { id }) => {
-            let id = id.ok_or(CommandError::NotEnoughArgs { command: "Get".into()})?;
+            let id = id.ok_or(CommandError::NotEnoughArgs {
+                command: "Get".into(),
+            })?;
             // maybe just return the task from add, thinking about keeping for a SQL db where add
             // may fail and we may not have added the task to the db
             let task = manager.get(id).ok_or(CommandError::TaskNotFound { id })?;
@@ -89,6 +89,11 @@ pub fn handle_command<S: TaskStore>(
             priority,
             status,
         }) => {
+            if matches!((&title, &priority, &status), (None, None, None)) {
+                return Err(CommandError::NotEnoughArgs {
+                    command: "Edit".into(),
+                });
+            }
             manager.edit(
                 id,
                 TaskEdit {
@@ -150,11 +155,11 @@ pub fn handle_command<S: TaskStore>(
             let edited_task = manager.get(id).ok_or(CommandError::TaskNotFound { id })?;
             Ok(CommandResult {
                 tasks: Some(vec![edited_task]),
-                message: Some("Task completed".into()),
+                message: Some("Marked task as completed".into()),
             })
         }
         None => Ok(CommandResult {
-            tasks: Some(manager.get_all(None)),
+            tasks: Some(manager.get_all(None)), // list all by default, no query
             message: None,
         }),
     }
