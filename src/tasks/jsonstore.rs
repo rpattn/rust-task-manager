@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{
     store::{load, save},
     tasks::{
@@ -12,7 +14,7 @@ use crate::{
 #[derive(Debug)]
 pub struct JsonStore {
     tasks: Vec<Task>,
-    filename: String,
+    filepath: PathBuf,
     dirty: bool,
 }
 
@@ -36,15 +38,15 @@ impl From<JsonStoreError> for TaskStoreError {
 }
 
 impl JsonStore {
-    pub fn new(filename: &str) -> Self {
+    pub fn new(filepath: PathBuf) -> Self {
         JsonStore {
             tasks: Vec::default(),
-            filename: filename.into(),
+            filepath,
             dirty: false,
         }
     }
     fn load_tasks(&mut self) -> Result<(), JsonStoreError> {
-        match load(&self.filename) {
+        match load(&self.filepath) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(e) => return Err(e.into()),
             Ok(s) if s.is_empty() => return Ok(()),
@@ -57,7 +59,7 @@ impl JsonStore {
     }
     fn save_tasks(&self) -> Result<(), JsonStoreError> {
         let tasks_str = serde_json::to_string_pretty(&self.tasks)?;
-        save(&self.filename, &tasks_str)?;
+        save(&self.filepath, &tasks_str)?;
         Ok(())
     }
 }

@@ -1,8 +1,9 @@
+use crate::config::{Config};
 use crate::parser::{Cli, Command, IdArg};
 use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
 use crate::tasks::taskstore::{
-    GetBy, QueryOptions, SortOrder, TaskField, TaskStore, TaskStoreError,
+    GetBy, QueryOptions, TaskField, TaskStore, TaskStoreError,
 };
 
 pub struct CommandResult {
@@ -23,6 +24,7 @@ pub enum CommandError {
 }
 
 pub fn handle_command<S: TaskStore>(
+    config: &Config,
     args: Cli,
     manager: &mut S,
 ) -> Result<CommandResult, CommandError> {
@@ -40,19 +42,17 @@ pub fn handle_command<S: TaskStore>(
                     reason: "unsupported filter field".into(),
                 });
             }
-            let query = match (page, size, sort, order, filter, value.clone()) {
-                (None, None, None, None, None, None) => None,
-                _ => Some(QueryOptions {
-                    page: page.unwrap_or(0),
-                    page_size: size.unwrap_or(10),
-                    sort_field: sort.unwrap_or(TaskField::Created),
-                    sort_order: order.unwrap_or(SortOrder::Asc),
-                    filter,
-                    value,
-                }),
+            let query = QueryOptions {
+                page: page.unwrap_or(config.query_options.page),
+                page_size: size.unwrap_or(config.query_options.page_size),
+                sort_field: sort.unwrap_or(config.query_options.sort_field),
+                sort_order: order.unwrap_or(config.query_options.sort_order),
+                filter: filter.or(config.query_options.filter),
+                value: value.or(config.query_options.value.clone()),
             };
+
             Ok(CommandResult {
-                tasks: Some(manager.get_all(query.as_ref())),
+                tasks: Some(manager.get_all(Some(&query))),
                 message: None,
             })
         }

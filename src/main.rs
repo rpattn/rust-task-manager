@@ -1,13 +1,14 @@
 use rust_task_manager::commands::handle_command;
+use rust_task_manager::config::{Config};
 use rust_task_manager::display::print_table;
 use rust_task_manager::parser::get_args;
 use rust_task_manager::tasks::JsonStore;
 use rust_task_manager::tasks::taskstore::TaskStore;
 
-const TASKS_FILENAME: &str = "out/tasks.json";
-
 fn main() {
-    let mut manager = JsonStore::new(TASKS_FILENAME);
+    let config = Config::default();
+
+    let mut manager = JsonStore::new(config.get_tasks_filepath());
     match manager.open() {
         Ok(()) => {}
         Err(e) => {
@@ -17,7 +18,7 @@ fn main() {
 
     let cli_args = get_args();
 
-    let command_result = handle_command(cli_args, &mut manager);
+    let command_result = handle_command(&config, cli_args, &mut manager);
 
     let result = match command_result {
         Ok(r) => r,
