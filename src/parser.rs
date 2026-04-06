@@ -13,6 +13,8 @@ use crate::tasks::taskstore::TaskField;
 
 #[derive(Parser)]
 pub struct Cli {
+    #[arg(short, long)]
+    pub config_file: Option<String>,
     #[command(subcommand)]
     pub command: Option<Command>,
 }
@@ -104,6 +106,24 @@ pub enum Command {
     Complete {
         id: IdArg,
     },
+    Config {
+        #[arg(long)]
+        tasks_filename: Option<String>,
+        #[arg(long)]
+        config_filename: Option<String>,
+        #[arg(long)]
+        page: Option<usize>,
+        #[arg(long)]
+        size: Option<usize>,
+        #[arg(long)]
+        sort: Option<TaskField>,
+        #[arg(long)]
+        order: Option<SortOrder>,
+        #[arg(long)]
+        filter: Option<TaskField>,
+        #[arg(long, short)]
+        value: Option<String>,
+    }
 }
 
 pub fn get_args() -> Cli {

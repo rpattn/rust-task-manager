@@ -6,20 +6,19 @@ use toml::ser::Error;
 
 use crate::{
     store::{load, save},
-    tasks::taskstore::QueryOptions,
+    tasks::taskstore::{QueryOptions},
 };
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub tasks_filename: String,
+    #[serde(skip)]
+    pub config_filename: String,
+    #[serde(skip)]
     config_dir: PathBuf,
+    #[serde(skip)]
     tasks_dir: PathBuf,
     pub query_options: QueryOptions,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ConfigFile {
-    tasks_filename: String,
-    query_options: QueryOptions,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -42,17 +41,9 @@ impl Default for Config {
 
         Config {
             tasks_filename: String::from("tasks.json"),
+            config_filename: String::from("config.toml"),
             config_dir,
             tasks_dir,
-            query_options: QueryOptions::default(),
-        }
-    }
-}
-
-impl Default for ConfigFile {
-    fn default() -> Self {
-        ConfigFile {
-            tasks_filename: String::from("tasks.json"),
             query_options: QueryOptions::default(),
         }
     }
@@ -65,7 +56,7 @@ impl Config {
             Err(e) => return Err(e.into()),
             Ok(s) if s.is_empty() => return Ok(()),
             Ok(s) => {
-                let config_from_file: ConfigFile = toml::from_str(&s)?;
+                let config_from_file: Config = toml::from_str(&s)?;
                 self.tasks_filename = config_from_file.tasks_filename;
                 self.query_options = config_from_file.query_options;
             }
@@ -73,8 +64,7 @@ impl Config {
         Ok(())
     }
     pub fn save(&self) -> Result<(), ConfigError> {
-        let default_config_file = ConfigFile::default();
-        let config_toml = toml::to_string_pretty(&default_config_file)?;
+        let config_toml = toml::to_string_pretty(&self)?;
         save(&self.get_config_filepath(), &config_toml)?;
         Ok(())
     }
@@ -85,6 +75,39 @@ impl Config {
         self.tasks_filename = file_name.to_string();
     }
     pub fn get_config_filepath(&self) -> PathBuf {
-        self.config_dir.join(PathBuf::from("config.toml"))
+        self.config_dir.join(&self.config_filename)
     }
+    pub fn update_config(&mut self, config_fields: ConfigFields) {
+        if let Some(filename) = config_fields.tasks_filename {
+            self.tasks_filename = filename;
+        }
+        if let Some(filename) = config_fields.config_filename {
+            self.config_filename = filename;
+        }
+        if let Some(option) = config_fields.query_options.page {
+            self.query_options.page = Some(option);
+        }
+        if let Some(option) = config_fields.query_options.page_size {
+            self.query_options.page_size = Some(option);
+        }
+        if let Some(option) = config_fields.query_options.sort_field {
+            self.query_options.sort_field = Some(option);
+        }
+        if let Some(option) = config_fields.query_options.sort_order {
+            self.query_options.sort_order = Some(option);
+        }
+        if let Some(option) = config_fields.query_options.filter {
+            self.query_options.filter = Some(option);
+        }
+        if let Some(option) = config_fields.query_options.value {
+            self.query_options.value = Some(option);
+        }
+        self.save().ok();
+    }
+}
+
+pub struct ConfigFields {
+    pub tasks_filename: Option<String>,
+    pub config_filename: Option<String>,
+    pub query_options: QueryOptions,
 }

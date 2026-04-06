@@ -1,5 +1,5 @@
-use crate::config::Config;
-use crate::parser::{Cli, Command, IdArg};
+use crate::config::{Config, ConfigFields};
+use crate::parser::{Command, IdArg};
 use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
 use crate::tasks::taskstore::{GetBy, QueryOptions, TaskField, TaskStore, TaskStoreError};
@@ -22,11 +22,11 @@ pub enum CommandError {
 }
 
 pub fn handle_command<S: TaskStore>(
-    config: &Config,
-    args: Cli,
+    config: &mut Config,
+    command: Option<Command>,
     manager: &mut S,
 ) -> Result<CommandResult, CommandError> {
-    match args.command {
+    match command {
         Some(Command::List {
             page,
             size,
@@ -41,16 +41,55 @@ pub fn handle_command<S: TaskStore>(
                 });
             }
             let query = QueryOptions {
-                page: page.unwrap_or(config.query_options.page),
-                page_size: size.unwrap_or(config.query_options.page_size),
-                sort_field: sort.unwrap_or(config.query_options.sort_field),
-                sort_order: order.unwrap_or(config.query_options.sort_order),
+                page: page.or(config.query_options.page),
+                page_size: size.or(config.query_options.page_size),
+                sort_field: sort.or(config.query_options.sort_field),
+                sort_order: order.or(config.query_options.sort_order),
                 filter: filter.or(config.query_options.filter),
                 value: value.or(config.query_options.value.clone()),
             };
-
             Ok(CommandResult {
                 tasks: Some(manager.get_all(Some(&query))),
+                message: None,
+            })
+        }
+        Some(Command::Config {
+            tasks_filename,
+            config_filename,
+            page,
+            size,
+            sort,
+            order,
+            filter,
+            value,
+        }) => {
+            if matches!((
+                    &tasks_filename,
+                    &config_filename,
+                    &page,
+                    &size,
+                    &sort,
+                    &order,
+                    &filter,
+                    &value), (None, None, None, None, None, None, None, None)) {
+                return Err(CommandError::NotEnoughArgs {
+                    command: "Config".into(),
+                });
+            }
+            config.update_config(ConfigFields {
+                tasks_filename,
+                config_filename,
+                query_options: QueryOptions {
+                    page,
+                    page_size: size,
+                    sort_field: sort,
+                    sort_order: order,
+                    filter,
+                    value,
+                }
+            });
+            Ok(CommandResult {
+                tasks: None,
                 message: None,
             })
         }

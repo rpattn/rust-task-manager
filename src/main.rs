@@ -6,7 +6,14 @@ use rust_task_manager::tasks::JsonStore;
 use rust_task_manager::tasks::taskstore::TaskStore;
 
 fn main() {
+    let cli_args = get_args();
+
     let mut config = Config::default();
+
+    if let Some(config_filename) = cli_args.config_file {
+        config.config_filename = config_filename;
+    }
+
     if let Err(e) = config.load_config() {
         eprintln!("Warning: could not load config: {e}");
         // continues with defaults
@@ -23,9 +30,7 @@ fn main() {
         }
     }
 
-    let cli_args = get_args();
-
-    let command_result = handle_command(&config, cli_args, &mut manager);
+    let command_result = handle_command(&mut config, cli_args.command, &mut manager);
 
     let result = match command_result {
         Ok(r) => r,

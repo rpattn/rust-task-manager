@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, usize};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -61,10 +61,10 @@ pub enum SortOrder {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryOptions {
-    pub page: usize,
-    pub page_size: usize,
-    pub sort_field: TaskField,
-    pub sort_order: SortOrder,
+    pub page: Option<usize>,
+    pub page_size: Option<usize>,
+    pub sort_field: Option<TaskField>,
+    pub sort_order: Option<SortOrder>,
     pub filter: Option<TaskField>,
     pub value: Option<String>,
 }
@@ -72,10 +72,10 @@ pub struct QueryOptions {
 impl Default for QueryOptions {
     fn default() -> Self {
         QueryOptions {
-            page: 0usize,
-            page_size: 5usize,
-            sort_field: TaskField::Created,
-            sort_order: SortOrder::Asc,
+            page: Some(0usize),
+            page_size: Some(5usize),
+            sort_field: Some(TaskField::Created),
+            sort_order: Some(SortOrder::Asc),
             filter: Some(TaskField::Status),
             value: Some(String::from("todo")),
         }
@@ -141,22 +141,25 @@ pub fn apply_query(tasks: &[Task], query: &QueryOptions) -> Vec<Task> {
     };
 
     tasks.sort_by(|a, b| {
-        let ord = match query.sort_field {
+        let ord = match query.sort_field.unwrap_or(TaskField::Created) {
             TaskField::Title => a.title.cmp(&b.title),
             TaskField::Priority => a.priority.cmp(&b.priority),
             TaskField::Created => a.get_created_at().cmp(&b.get_created_at()),
             TaskField::Status => a.done.cmp(&b.done),
         };
-        match query.sort_order {
+        match query.sort_order.unwrap_or(SortOrder::Asc) {
             SortOrder::Asc => ord,
             SortOrder::Desc => ord.reverse(),
         }
     });
 
-    let start = query.page * query.page_size;
+    let page = query.page.unwrap_or(0);
+    let size = query.page_size.unwrap_or(usize::MAX);
+
+    let start = page * size;
     tasks
         .into_iter()
         .skip(start)
-        .take(query.page_size)
+        .take(size)
         .collect()
 }
