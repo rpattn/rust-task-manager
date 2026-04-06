@@ -4,14 +4,14 @@ use comfy_table::{Cell, Color};
 use crate::tasks::Task;
 use crate::tasks::task::{Priority, Status};
 
-pub fn status_to_cell(status: &Status) -> Cell {
+fn status_to_cell(status: &Status) -> Cell {
     match status {
         Status::Todo => Cell::new("⬜ Todo").fg(Color::Yellow),
         Status::Complete => Cell::new("✅ Done").fg(Color::Green),
     }
 }
 
-pub fn priority_to_cell(priority: &Priority) -> Cell {
+fn priority_to_cell(priority: &Priority) -> Cell {
     match priority {
         Priority::Low => Cell::new("Low").fg(Color::Green),
         Priority::Medium => Cell::new("Medium").fg(Color::Yellow),
