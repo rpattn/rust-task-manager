@@ -21,10 +21,10 @@ fn store_with_tasks() -> BasicStore {
 }
 
 fn query(
-    page: usize,
-    page_size: usize,
-    sort_field: TaskField,
-    sort_order: SortOrder,
+    page: Option<usize>,
+    page_size: Option<usize>,
+    sort_field: Option<TaskField>,
+    sort_order: Option<SortOrder>,
 ) -> QueryOptions {
     QueryOptions {
         page,
@@ -38,10 +38,10 @@ fn query(
 
 fn query_with_filter(field: TaskField, val: &str) -> QueryOptions {
     QueryOptions {
-        page: 0,
-        page_size: 100,
-        sort_field: TaskField::Created,
-        sort_order: SortOrder::Asc,
+        page: None,       // use default
+        page_size: None,  // use default
+        sort_field: None, // use default
+        sort_order: None, // use default
         filter: Some(field),
         value: Some(val.into()),
     }
@@ -52,7 +52,12 @@ fn query_with_filter(field: TaskField, val: &str) -> QueryOptions {
 #[test]
 fn sort_by_title_asc() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 10, TaskField::Title, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        None,
+        None,
+        Some(TaskField::Title),
+        Some(SortOrder::Asc),
+    )));
     let titles: Vec<&str> = tasks.iter().map(|t| t.title.as_str()).collect();
     assert_eq!(
         titles,
@@ -63,7 +68,12 @@ fn sort_by_title_asc() {
 #[test]
 fn sort_by_title_desc() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 10, TaskField::Title, SortOrder::Desc)));
+    let tasks = store.get_all(Some(&query(
+        None,
+        None,
+        Some(TaskField::Title),
+        Some(SortOrder::Desc),
+    )));
     let titles: Vec<&str> = tasks.iter().map(|t| t.title.as_str()).collect();
     assert_eq!(
         titles,
@@ -74,24 +84,39 @@ fn sort_by_title_desc() {
 #[test]
 fn sort_by_priority_asc() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 10, TaskField::Priority, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        None,
+        None,
+        Some(TaskField::Priority),
+        Some(SortOrder::Asc),
+    )));
     let priorities: Vec<&Priority> = tasks.iter().map(|t| &t.priority).collect();
-    assert_eq!(priorities[0], &Priority::Low);
-    assert_eq!(priorities[4], &Priority::High);
+    assert_eq!(priorities.first(), Some(&&Priority::Low));
+    assert_eq!(priorities.last(), Some(&&Priority::High));
 }
 
 #[test]
 fn sort_by_priority_desc() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 10, TaskField::Priority, SortOrder::Desc)));
-    assert_eq!(tasks[0].priority, Priority::High);
-    assert_eq!(tasks[4].priority, Priority::Low);
+    let tasks = store.get_all(Some(&query(
+        None,
+        None,
+        Some(TaskField::Priority),
+        Some(SortOrder::Desc),
+    )));
+    assert_eq!(tasks.first().unwrap().priority, Priority::High);
+    assert_eq!(tasks.last().unwrap().priority, Priority::Low);
 }
 
 #[test]
 fn sort_by_created_asc_preserves_insertion_order() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 10, TaskField::Created, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        None,
+        None,
+        Some(TaskField::Created),
+        Some(SortOrder::Asc),
+    )));
     let titles: Vec<&str> = tasks.iter().map(|t| t.title.as_str()).collect();
     assert_eq!(
         titles,
@@ -104,7 +129,12 @@ fn sort_by_created_asc_preserves_insertion_order() {
 #[test]
 fn pagination_first_page() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 2, TaskField::Title, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        Some(0),
+        Some(2),
+        Some(TaskField::Title),
+        Some(SortOrder::Asc),
+    )));
     assert_eq!(tasks.len(), 2);
     assert_eq!(tasks[0].title, "Apple");
     assert_eq!(tasks[1].title, "Banana");
@@ -113,7 +143,12 @@ fn pagination_first_page() {
 #[test]
 fn pagination_second_page() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(1, 2, TaskField::Title, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        Some(1),
+        Some(2),
+        Some(TaskField::Title),
+        Some(SortOrder::Asc),
+    )));
     assert_eq!(tasks.len(), 2);
     assert_eq!(tasks[0].title, "Cherry");
     assert_eq!(tasks[1].title, "Date");
@@ -122,8 +157,12 @@ fn pagination_second_page() {
 #[test]
 fn pagination_last_page_partial() {
     let store = store_with_tasks();
-    // 5 tasks, page size 2, page 2 = last item only
-    let tasks = store.get_all(Some(&query(2, 2, TaskField::Title, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        Some(2),
+        Some(2),
+        Some(TaskField::Title),
+        Some(SortOrder::Asc),
+    )));
     assert_eq!(tasks.len(), 1);
     assert_eq!(tasks[0].title, "Elderberry");
 }
@@ -131,14 +170,24 @@ fn pagination_last_page_partial() {
 #[test]
 fn pagination_beyond_end_returns_empty() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(99, 10, TaskField::Title, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        Some(99),
+        Some(10),
+        Some(TaskField::Title),
+        Some(SortOrder::Asc),
+    )));
     assert!(tasks.is_empty());
 }
 
 #[test]
 fn pagination_page_size_larger_than_total() {
     let store = store_with_tasks();
-    let tasks = store.get_all(Some(&query(0, 100, TaskField::Title, SortOrder::Asc)));
+    let tasks = store.get_all(Some(&query(
+        Some(0),
+        Some(100),
+        Some(TaskField::Title),
+        Some(SortOrder::Asc),
+    )));
     assert_eq!(tasks.len(), 5);
 }
 
@@ -194,16 +243,17 @@ fn filter_by_priority_case_insensitive() {
 fn filter_by_status_todo() {
     let store = store_with_tasks();
     let tasks = store.get_all(Some(&query_with_filter(TaskField::Status, "todo")));
-    assert_eq!(tasks.len(), 5); // all default to Todo
+    assert_eq!(tasks.len(), 5);
 }
 
 #[test]
 fn filter_by_status_complete() {
     let mut store = store_with_tasks();
     use rust_task_manager::tasks::task::{Status, TaskEdit};
+
     store
         .edit(
-            0usize,
+            0,
             TaskEdit {
                 title: None,
                 priority: None,
@@ -211,44 +261,44 @@ fn filter_by_status_complete() {
             },
         )
         .unwrap();
+
     let tasks = store.get_all(Some(&query_with_filter(TaskField::Status, "done")));
     assert_eq!(tasks.len(), 1);
 }
 
-// --- sort + filter combined ---
+// --- combined ---
 
 #[test]
 fn filter_then_sort() {
     let store = store_with_tasks();
     let q = QueryOptions {
-        page: 0,
-        page_size: 10,
-        sort_field: TaskField::Title,
-        sort_order: SortOrder::Desc,
+        page: None,
+        page_size: None,
+        sort_field: Some(TaskField::Title),
+        sort_order: Some(SortOrder::Desc),
         filter: Some(TaskField::Priority),
         value: Some("low".into()),
     };
+
     let tasks = store.get_all(Some(&q));
     assert_eq!(tasks.len(), 2);
-    // sorted desc: Date before Banana
     assert_eq!(tasks[0].title, "Date");
     assert_eq!(tasks[1].title, "Banana");
 }
-
-// --- sort + filter + pagination combined ---
 
 #[test]
 fn filter_sort_paginate() {
     let store = store_with_tasks();
     let q = QueryOptions {
-        page: 0,
-        page_size: 1,
-        sort_field: TaskField::Title,
-        sort_order: SortOrder::Asc,
+        page: Some(0),
+        page_size: Some(1),
+        sort_field: Some(TaskField::Title),
+        sort_order: Some(SortOrder::Asc),
         filter: Some(TaskField::Priority),
         value: Some("high".into()),
     };
+
     let tasks = store.get_all(Some(&q));
     assert_eq!(tasks.len(), 1);
-    assert_eq!(tasks[0].title, "Apple"); // first high priority alphabetically
+    assert_eq!(tasks[0].title, "Apple");
 }

@@ -123,7 +123,10 @@ pub enum Command {
         filter: Option<TaskField>,
         #[arg(long, short)]
         value: Option<String>,
-    }
+        #[arg(long)]
+        no_value: bool,
+    },
+    Info,
 }
 
 pub fn get_args() -> Cli {

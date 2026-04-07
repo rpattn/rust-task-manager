@@ -1,4 +1,4 @@
-use crate::config::{Config, ConfigFields};
+use crate::config::{Config, ConfigError, ConfigFields};
 use crate::parser::{Command, IdArg};
 use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
@@ -19,6 +19,8 @@ pub enum CommandError {
     TaskNotFound { id: IdArg },
     #[error(transparent)]
     Store(#[from] TaskStoreError),
+    #[error(transparent)]
+    ConfigError(#[from] ConfigError),
 }
 
 pub fn handle_command<S: TaskStore>(
@@ -62,8 +64,10 @@ pub fn handle_command<S: TaskStore>(
             order,
             filter,
             value,
+            no_value,
         }) => {
-            if matches!((
+            if matches!(
+                (
                     &tasks_filename,
                     &config_filename,
                     &page,
@@ -71,11 +75,15 @@ pub fn handle_command<S: TaskStore>(
                     &sort,
                     &order,
                     &filter,
-                    &value), (None, None, None, None, None, None, None, None)) {
+                    &value
+                ),
+                (None, None, None, None, None, None, None, None)
+            ) {
                 return Err(CommandError::NotEnoughArgs {
                     command: "Config".into(),
                 });
             }
+            let value = if no_value { None } else { value };
             config.update_config(ConfigFields {
                 tasks_filename,
                 config_filename,
@@ -86,13 +94,17 @@ pub fn handle_command<S: TaskStore>(
                     sort_order: order,
                     filter,
                     value,
-                }
-            });
+                },
+            })?;
             Ok(CommandResult {
                 tasks: None,
                 message: None,
             })
         }
+        Some(Command::Info) => Ok(CommandResult {
+            tasks: None,
+            message: Some(config.to_string()),
+        }),
         Some(Command::Get { id }) => {
             let id = id.ok_or(CommandError::NotEnoughArgs {
                 command: "Get".into(),

@@ -1,4 +1,4 @@
-use std::{fmt::Display, usize};
+use std::fmt::{self, Display};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -53,10 +53,22 @@ pub enum TaskField {
     Status,
 }
 
+impl fmt::Display for TaskField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Clone, Debug, Copy, Serialize, Deserialize, clap::ValueEnum)]
 pub enum SortOrder {
     Asc,
     Desc,
+}
+
+impl fmt::Display for SortOrder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -67,6 +79,31 @@ pub struct QueryOptions {
     pub sort_order: Option<SortOrder>,
     pub filter: Option<TaskField>,
     pub value: Option<String>,
+}
+
+impl fmt::Display for QueryOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Page: {}
+Page Size: {}
+Sort Field: {:?}
+Sort Order: {:?}
+Filter: {:?}
+Include: {}",
+            self.page.map_or("unset".to_string(), |v| v.to_string()),
+            self.page_size
+                .map_or("unset".to_string(), |v| v.to_string()),
+            self.sort_field
+                .map_or("unset".to_string(), |v| v.to_string()),
+            self.sort_order
+                .map_or("unset".to_string(), |v| v.to_string()),
+            self.filter.map_or("unset".to_string(), |v| v.to_string()),
+            self.value
+                .as_ref()
+                .map_or("unset".to_string(), |v| v.to_string())
+        )
+    }
 }
 
 impl Default for QueryOptions {
@@ -157,9 +194,5 @@ pub fn apply_query(tasks: &[Task], query: &QueryOptions) -> Vec<Task> {
     let size = query.page_size.unwrap_or(usize::MAX);
 
     let start = page * size;
-    tasks
-        .into_iter()
-        .skip(start)
-        .take(size)
-        .collect()
+    tasks.into_iter().skip(start).take(size).collect()
 }

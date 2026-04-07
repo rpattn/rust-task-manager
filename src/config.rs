@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fmt, path::PathBuf};
 
 use dirs::{config_local_dir, data_local_dir};
 use serde::{Deserialize, Serialize};
@@ -6,7 +6,7 @@ use toml::ser::Error;
 
 use crate::{
     store::{load, save},
-    tasks::taskstore::{QueryOptions},
+    tasks::taskstore::QueryOptions,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -71,13 +71,10 @@ impl Config {
     pub fn get_tasks_filepath(&self) -> PathBuf {
         self.tasks_dir.join(&self.tasks_filename)
     }
-    pub fn change_tasks_filename(&mut self, file_name: &str) {
-        self.tasks_filename = file_name.to_string();
-    }
     pub fn get_config_filepath(&self) -> PathBuf {
         self.config_dir.join(&self.config_filename)
     }
-    pub fn update_config(&mut self, config_fields: ConfigFields) {
+    pub fn update_config(&mut self, config_fields: ConfigFields) -> Result<(), ConfigError> {
         if let Some(filename) = config_fields.tasks_filename {
             self.tasks_filename = filename;
         }
@@ -99,10 +96,20 @@ impl Config {
         if let Some(option) = config_fields.query_options.filter {
             self.query_options.filter = Some(option);
         }
-        if let Some(option) = config_fields.query_options.value {
-            self.query_options.value = Some(option);
-        }
-        self.save().ok();
+        self.query_options.value = config_fields.query_options.value;
+        self.save()
+    }
+}
+
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Config File: {}
+Tasks File: {}
+Query Options: \n{}",
+            self.config_filename, self.tasks_filename, self.query_options
+        )
     }
 }
 

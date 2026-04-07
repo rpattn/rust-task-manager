@@ -95,9 +95,9 @@ The planned trajectory is CLI -> API server -> richer data model, each phase bui
 
 ### Phase 1 - Config
 
-- [ ] Config file (`~/.config/rust-task-manager/config.toml`) via `dirs` + `toml` crates
-- [ ] Configurable storage path (replaces hardcoded `out/tasks.json`)
-- [ ] Configurable defaults (page size, sort field, sort order)
+- [x] Config file (`~/.config/rust-task-manager/config.toml`) via `dirs` + `toml` crates
+- [x] Configurable storage path (replaces hardcoded `out/tasks.json`)
+- [x] Configurable defaults (page size, sort field, sort order)
 - [ ] Display preferences (colour on/off)
 - [ ] Config-driven backend selection (`backend = "json"` / `"sqlite"`)
 
