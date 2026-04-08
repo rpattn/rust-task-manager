@@ -14,10 +14,10 @@ pub enum TaskStoreError {
 }
 
 pub trait TaskStore {
-    fn get<B: IntoGetBy>(&self, by: B) -> Option<Task>;
+    fn get(&self, by: GetBy) -> Option<Task>;
     fn add(&mut self, task: Task);
-    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError>;
-    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError>;
+    fn edit(&mut self, by: GetBy, edit: TaskEdit) -> Result<(), TaskStoreError>;
+    fn remove(&mut self, by: GetBy) -> Result<(), TaskStoreError>;
     fn get_all(&self, page: Option<&QueryOptions>) -> Vec<Task>;
     fn clear_all_tasks(&mut self);
     fn open(&mut self) -> Result<(), TaskStoreError> {
@@ -28,18 +28,18 @@ pub trait TaskStore {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum GetBy {
-    ByIndex(usize),
-    ByUuid(Uuid),
+    ByIndex { index: usize },
+    ByUuid { uuid: Uuid },
     Last,
 }
 
 impl Display for GetBy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GetBy::ByIndex(id) => write!(f, "{id}"),
-            GetBy::ByUuid(id) => write!(f, "{id}"),
+            GetBy::ByIndex { index } => write!(f, "{index}"),
+            GetBy::ByUuid { uuid } => write!(f, "{uuid}"),
             GetBy::Last => write!(f, "last"),
         }
     }
@@ -131,19 +131,19 @@ impl IntoGetBy for GetBy {
 
 impl IntoGetBy for usize {
     fn into_get_by(self) -> GetBy {
-        GetBy::ByIndex(self)
+        GetBy::ByIndex { index: self }
     }
 }
 
 impl IntoGetBy for Uuid {
     fn into_get_by(self) -> GetBy {
-        GetBy::ByUuid(self)
+        GetBy::ByUuid { uuid: self }
     }
 }
 
 pub fn get_task_index(tasks: &[Task], by: &GetBy) -> Option<usize> {
     match by {
-        GetBy::ByIndex(index) => {
+        GetBy::ByIndex { index } => {
             if *index < tasks.len() {
                 Some(*index)
             } else {
@@ -157,7 +157,7 @@ pub fn get_task_index(tasks: &[Task], by: &GetBy) -> Option<usize> {
                 Some(tasks.len() - 1)
             }
         }
-        GetBy::ByUuid(uuid) => tasks.iter().position(|x| x.get_id() == uuid),
+        GetBy::ByUuid { uuid } => tasks.iter().position(|x| x.get_id() == uuid),
     }
 }
 

@@ -1,6 +1,6 @@
 // tests/manager_tests.rs
 use rust_task_manager::tasks::task::{Priority, TaskEdit};
-use rust_task_manager::tasks::taskstore::{GetBy, TaskStore};
+use rust_task_manager::tasks::taskstore::{GetBy, IntoGetBy, TaskStore};
 use rust_task_manager::tasks::{BasicStore, Task};
 
 fn make_task(title: &str) -> Task {
@@ -40,19 +40,19 @@ fn add_multiple_tasks_preserves_order() {
 #[test]
 fn get_by_index_returns_correct_task() {
     let manager = manager_with_tasks(&["a", "b", "c"]);
-    assert_eq!(manager.get(1usize).unwrap().title, "b");
+    assert_eq!(manager.get(1usize.into_get_by()).unwrap().title, "b");
 }
 
 #[test]
 fn get_by_index_out_of_bounds_returns_none() {
     let manager = manager_with_tasks(&["only"]);
-    assert!(manager.get(99usize).is_none());
+    assert!(manager.get(99usize.into_get_by()).is_none());
 }
 
 #[test]
 fn get_by_index_on_empty_manager_returns_none() {
     let manager = BasicStore::default();
-    assert!(manager.get(0usize).is_none());
+    assert!(manager.get(0usize.into_get_by()).is_none());
 }
 
 // --- get by uuid ---
@@ -64,7 +64,7 @@ fn get_by_uuid_returns_correct_task() {
     let id = *task.get_id();
     manager.add(task);
 
-    let found = manager.get(id);
+    let found = manager.get(id.into_get_by());
     assert!(found.is_some());
     assert_eq!(found.unwrap().title, "find me");
 }
@@ -73,7 +73,7 @@ fn get_by_uuid_returns_correct_task() {
 fn get_by_unknown_uuid_returns_none() {
     let manager = manager_with_tasks(&["a"]);
     let random_id = uuid::Uuid::new_v4();
-    assert!(manager.get(random_id).is_none());
+    assert!(manager.get(random_id.into_get_by()).is_none());
 }
 
 // --- get last ---
@@ -97,7 +97,7 @@ fn edit_updates_title() {
     let mut manager = manager_with_tasks(&["old"]);
     manager
         .edit(
-            0usize,
+            0usize.into_get_by(),
             TaskEdit {
                 title: Some("new".into()),
                 priority: None,
@@ -105,7 +105,7 @@ fn edit_updates_title() {
             },
         )
         .unwrap();
-    assert_eq!(manager.get(0usize).unwrap().title, "new");
+    assert_eq!(manager.get(0usize.into_get_by()).unwrap().title, "new");
 }
 
 #[test]
@@ -114,7 +114,7 @@ fn edit_on_missing_returns_err() {
     assert!(
         manager
             .edit(
-                0usize,
+                0usize.into_get_by(),
                 TaskEdit {
                     title: Some("x".into()),
                     priority: None,
@@ -130,14 +130,14 @@ fn edit_on_missing_returns_err() {
 #[test]
 fn remove_by_index_decreases_count() {
     let mut manager = manager_with_tasks(&["a", "b"]);
-    manager.remove(0usize).unwrap();
+    manager.remove(0usize.into_get_by()).unwrap();
     assert_eq!(manager.get_all(None).len(), 1);
 }
 
 #[test]
 fn remove_by_index_removes_correct_task() {
     let mut manager = manager_with_tasks(&["keep", "remove"]);
-    manager.remove(1usize).unwrap();
+    manager.remove(1usize.into_get_by()).unwrap();
     assert_eq!(manager.get_all(None)[0].title, "keep");
 }
 
@@ -149,7 +149,7 @@ fn remove_by_uuid_removes_correct_task() {
     manager.add(task);
     manager.add(make_task("bystander"));
 
-    manager.remove(id).unwrap();
+    manager.remove(id.into_get_by()).unwrap();
 
     assert_eq!(manager.get_all(None).len(), 1);
     assert_eq!(manager.get_all(None)[0].title, "bystander");
@@ -172,13 +172,13 @@ fn remove_last_on_empty_returns_err() {
 #[test]
 fn remove_out_of_bounds_returns_err() {
     let mut manager = manager_with_tasks(&["only"]);
-    assert!(manager.remove(99usize).is_err());
+    assert!(manager.remove(99usize.into_get_by()).is_err());
 }
 
 #[test]
 fn remove_unknown_uuid_returns_err() {
     let mut manager = manager_with_tasks(&["a"]);
-    assert!(manager.remove(uuid::Uuid::new_v4()).is_err());
+    assert!(manager.remove(uuid::Uuid::new_v4().into_get_by()).is_err());
 }
 
 // --- clear ---
@@ -219,5 +219,8 @@ fn add_task_with_high_priority() {
     let mut task = Task::default();
     task.priority = Priority::High;
     manager.add(task);
-    assert_eq!(manager.get(0usize).unwrap().priority, Priority::High);
+    assert_eq!(
+        manager.get(0usize.into_get_by()).unwrap().priority,
+        Priority::High
+    );
 }

@@ -23,7 +23,6 @@ fn main() {
     manager.open().unwrap_or_else(|e| {
         println!("Error fetching tasks from {}", config.tasks_filename);
         println!("{e}");
-        return;
     });
     let command_result = handle_command(&mut config, cli_args.command, &mut manager);
 

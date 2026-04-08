@@ -1,13 +1,10 @@
 use clap::Parser;
 use clap::Subcommand;
-use core::fmt;
 use std::str::FromStr;
-use uuid::Uuid;
 
 use crate::tasks::task::Priority;
 use crate::tasks::task::Status;
 use crate::tasks::taskstore::GetBy;
-use crate::tasks::taskstore::IntoGetBy;
 use crate::tasks::taskstore::SortOrder;
 use crate::tasks::taskstore::TaskField;
 
@@ -19,44 +16,19 @@ pub struct Cli {
     pub command: Option<Command>,
 }
 
-#[derive(Clone, Debug, Copy)]
-pub enum IdArg {
-    Index { index: usize },
-    Uuid { uuid: Uuid },
-}
-
-impl fmt::Display for IdArg {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IdArg::Index { index } => write!(f, "{index}"),
-            IdArg::Uuid { uuid } => write!(f, "{uuid}"),
-        }
-    }
-}
-
-impl FromStr for IdArg {
+impl FromStr for GetBy {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let as_uuid = uuid::Uuid::from_str(s);
         if let Ok(uuid) = as_uuid {
-            return Ok(IdArg::Uuid { uuid });
+            return Ok(GetBy::ByUuid { uuid });
         }
         let as_usize = usize::from_str(s);
         if let Ok(index) = as_usize {
-            Ok(IdArg::Index { index })
+            Ok(GetBy::ByIndex { index })
         } else {
             Err(String::from("Error parsing id"))
-        }
-    }
-}
-
-// Only allow user to get by unique fields, preserves internal full GetBy
-impl IntoGetBy for IdArg {
-    fn into_get_by(self) -> GetBy {
-        match self {
-            IdArg::Index { index } => GetBy::ByIndex(index),
-            IdArg::Uuid { uuid } => GetBy::ByUuid(uuid),
         }
     }
 }
@@ -78,7 +50,7 @@ pub enum Command {
         value: Option<String>,
     },
     Get {
-        id: Option<IdArg>,
+        id: Option<GetBy>,
     },
     Add {
         name: String,
@@ -86,7 +58,7 @@ pub enum Command {
         priority: Option<Priority>,
     },
     Edit {
-        id: IdArg,
+        id: GetBy,
         #[arg(long, short)]
         title: Option<String>,
         #[arg(long, short)]
@@ -95,7 +67,7 @@ pub enum Command {
         status: Option<Status>,
     },
     Remove {
-        id: Option<IdArg>,
+        id: Option<GetBy>,
         #[arg(short, long)]
         last: bool,
     },
@@ -104,7 +76,7 @@ pub enum Command {
         force: bool,
     },
     Complete {
-        id: IdArg,
+        id: GetBy,
     },
     Config {
         #[arg(long)]

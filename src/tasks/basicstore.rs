@@ -1,7 +1,7 @@
 use crate::tasks::{
     Task,
     task::TaskEdit,
-    taskstore::{IntoGetBy, QueryOptions, TaskStore, TaskStoreError, apply_query, get_task_index},
+    taskstore::{GetBy, QueryOptions, TaskStore, TaskStoreError, apply_query, get_task_index},
 };
 
 #[derive(Debug, Default)]
@@ -10,16 +10,16 @@ pub struct BasicStore {
 }
 
 impl TaskStore for BasicStore {
-    fn get<B: IntoGetBy>(&self, by: B) -> Option<Task> {
-        get_task_index(&self.tasks, &by.into_get_by())
+    fn get(&self, by: GetBy) -> Option<Task> {
+        get_task_index(&self.tasks, &by)
             .and_then(|i| self.tasks.get(i))
             .cloned()
     }
     fn add(&mut self, task: Task) {
         self.tasks.push(task);
     }
-    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
-        let id = by.into_get_by();
+    fn edit(&mut self, by: GetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
+        let id = by;
         let task_index =
             get_task_index(&self.tasks, &id).ok_or(TaskStoreError::TaskNotFound { id })?;
         self.tasks
@@ -28,13 +28,12 @@ impl TaskStore for BasicStore {
             .edit(edit);
         Ok(())
     }
-    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError> {
-        let id = by.into_get_by();
-        if let Some(index) = get_task_index(&self.tasks, &id) {
+    fn remove(&mut self, by: GetBy) -> Result<(), TaskStoreError> {
+        if let Some(index) = get_task_index(&self.tasks, &by) {
             self.tasks.remove(index);
             Ok(())
         } else {
-            Err(TaskStoreError::TaskNotFound { id })
+            Err(TaskStoreError::TaskNotFound { id: by })
         }
     }
     fn get_all(&self, query: Option<&QueryOptions>) -> Vec<Task> {

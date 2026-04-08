@@ -1,6 +1,6 @@
 use rust_task_manager::tasks::task::TaskEdit;
 // tests/serialization_tests.rs
-use rust_task_manager::tasks::taskstore::TaskStore;
+use rust_task_manager::tasks::taskstore::{IntoGetBy, TaskStore};
 use rust_task_manager::tasks::{JsonStore, Task};
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
@@ -85,7 +85,7 @@ fn edit_persists_after_reload() {
     manager.add(Task::default());
     manager
         .edit(
-            0usize,
+            0usize.into_get_by(),
             TaskEdit {
                 title: Some("edited".into()),
                 priority: None,
@@ -112,7 +112,7 @@ fn edit_persists_without_prior_mutation() {
     loaded.open().unwrap();
     loaded
         .edit(
-            0usize,
+            0usize.into_get_by(),
             TaskEdit {
                 title: Some("edited".into()),
                 priority: None,

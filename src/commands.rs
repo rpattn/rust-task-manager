@@ -1,8 +1,10 @@
 use crate::config::{Config, ConfigError, ConfigFields};
-use crate::parser::{Command, IdArg};
+use crate::parser::Command;
 use crate::tasks::Task;
 use crate::tasks::task::{Status, TaskEdit};
-use crate::tasks::taskstore::{GetBy, QueryOptions, TaskField, TaskStore, TaskStoreError};
+use crate::tasks::taskstore::{
+    GetBy, IntoGetBy, QueryOptions, TaskField, TaskStore, TaskStoreError,
+};
 
 pub struct CommandResult {
     pub tasks: Option<Vec<Task>>,
@@ -16,7 +18,7 @@ pub enum CommandError {
     #[error("query error: {reason}")]
     QueryError { reason: String },
     #[error("no task found for id: {id}")]
-    TaskNotFound { id: IdArg },
+    TaskNotFound { id: GetBy },
     #[error(transparent)]
     Store(#[from] TaskStoreError),
     #[error(transparent)]
@@ -129,9 +131,11 @@ pub fn handle_command<S: TaskStore>(
             }
             let id = *task.get_id();
             manager.add(task);
-            let task = manager.get(id).ok_or(CommandError::TaskNotFound {
-                id: IdArg::Uuid { uuid: id },
-            })?;
+            let task = manager
+                .get(id.into_get_by())
+                .ok_or(CommandError::TaskNotFound {
+                    id: GetBy::ByUuid { uuid: id },
+                })?;
             Ok(CommandResult {
                 tasks: Some(vec![task]),
                 message: Some("Added task".into()),
@@ -164,7 +168,7 @@ pub fn handle_command<S: TaskStore>(
         }
         Some(Command::Remove { id, last }) => {
             if let Some(taskid) = id {
-                manager.remove(taskid)?;
+                manager.remove(taskid.into_get_by())?;
                 Ok(CommandResult {
                     tasks: None,
                     message: Some("Removed task".into()),

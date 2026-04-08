@@ -5,9 +5,7 @@ use crate::{
     tasks::{
         Task,
         task::TaskEdit,
-        taskstore::{
-            IntoGetBy, QueryOptions, TaskStore, TaskStoreError, apply_query, get_task_index,
-        },
+        taskstore::{GetBy, QueryOptions, TaskStore, TaskStoreError, apply_query, get_task_index},
     },
 };
 
@@ -69,8 +67,8 @@ impl TaskStore for JsonStore {
         self.load_tasks()?;
         Ok(())
     }
-    fn get<B: IntoGetBy>(&self, by: B) -> Option<Task> {
-        get_task_index(&self.tasks, &by.into_get_by())
+    fn get(&self, by: GetBy) -> Option<Task> {
+        get_task_index(&self.tasks, &by)
             .and_then(|i| self.tasks.get(i))
             .cloned()
     }
@@ -78,8 +76,8 @@ impl TaskStore for JsonStore {
         self.tasks.push(task);
         self.dirty = true;
     }
-    fn edit(&mut self, by: impl IntoGetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
-        let id = by.into_get_by();
+    fn edit(&mut self, by: GetBy, edit: TaskEdit) -> Result<(), TaskStoreError> {
+        let id = by;
         let task_index =
             get_task_index(&self.tasks, &id).ok_or(TaskStoreError::TaskNotFound { id })?;
         self.tasks
@@ -89,8 +87,8 @@ impl TaskStore for JsonStore {
         self.dirty = true;
         Ok(())
     }
-    fn remove(&mut self, by: impl IntoGetBy) -> Result<(), TaskStoreError> {
-        let id = by.into_get_by();
+    fn remove(&mut self, by: GetBy) -> Result<(), TaskStoreError> {
+        let id = by;
         if let Some(index) = get_task_index(&self.tasks, &id) {
             self.tasks.remove(index);
             self.dirty = true;

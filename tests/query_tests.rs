@@ -1,6 +1,8 @@
 // tests/query_tests.rs
 use rust_task_manager::tasks::task::Priority;
-use rust_task_manager::tasks::taskstore::{QueryOptions, SortOrder, TaskField, TaskStore};
+use rust_task_manager::tasks::taskstore::{
+    IntoGetBy, QueryOptions, SortOrder, TaskField, TaskStore,
+};
 use rust_task_manager::tasks::{BasicStore, Task};
 
 fn make_task(title: &str, priority: Priority) -> Task {
@@ -253,7 +255,7 @@ fn filter_by_status_complete() {
 
     store
         .edit(
-            0,
+            0usize.into_get_by(),
             TaskEdit {
                 title: None,
                 priority: None,
