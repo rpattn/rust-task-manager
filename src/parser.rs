@@ -124,7 +124,7 @@ pub enum Command {
         #[arg(long, short)]
         value: Option<String>,
         #[arg(long)]
-        no_value: bool,
+        clear_filter: bool,
     },
     Info,
 }

@@ -87,9 +87,9 @@ impl fmt::Display for QueryOptions {
             f,
             "Page: {}
 Page Size: {}
-Sort Field: {:?}
-Sort Order: {:?}
-Filter: {:?}
+Sort Field: {}
+Sort Order: {}
+Filter: {}
 Include: {}",
             self.page.map_or("unset".to_string(), |v| v.to_string()),
             self.page_size

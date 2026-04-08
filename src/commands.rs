@@ -64,7 +64,7 @@ pub fn handle_command<S: TaskStore>(
             order,
             filter,
             value,
-            no_value,
+            clear_filter,
         }) => {
             if matches!(
                 (
@@ -75,15 +75,18 @@ pub fn handle_command<S: TaskStore>(
                     &sort,
                     &order,
                     &filter,
-                    &value
+                    &value,
+                    &clear_filter,
                 ),
-                (None, None, None, None, None, None, None, None)
+                (None, None, None, None, None, None, None, None, false)
             ) {
                 return Err(CommandError::NotEnoughArgs {
                     command: "Config".into(),
                 });
             }
-            let value = if no_value { None } else { value };
+            if clear_filter {
+                config.clear_filter()?;
+            }
             config.update_config(ConfigFields {
                 tasks_filename,
                 config_filename,

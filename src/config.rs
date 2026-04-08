@@ -96,7 +96,14 @@ impl Config {
         if let Some(option) = config_fields.query_options.filter {
             self.query_options.filter = Some(option);
         }
-        self.query_options.value = config_fields.query_options.value;
+        if let Some(option) = config_fields.query_options.value {
+            self.query_options.value = Some(option);
+        }
+        self.save()
+    }
+    pub fn clear_filter(&mut self) -> Result<(), ConfigError> {
+        self.query_options.value = None;
+        self.query_options.filter = None;
         self.save()
     }
 }
