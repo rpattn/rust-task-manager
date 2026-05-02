@@ -25,10 +25,10 @@ pub enum CommandError {
     ConfigError(#[from] ConfigError),
 }
 
-pub fn handle_command<S: TaskStore>(
+pub fn handle_command(
     config: &mut Config,
     command: Option<Command>,
-    manager: &mut S,
+    manager: &mut Box<dyn TaskStore>,
 ) -> Result<CommandResult, CommandError> {
     match command {
         Some(Command::List {

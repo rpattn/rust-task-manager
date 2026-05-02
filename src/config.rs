@@ -6,11 +6,12 @@ use toml::ser::Error;
 
 use crate::{
     store::{load, save},
-    tasks::taskstore::QueryOptions,
+    tasks::{taskstore::QueryOptions},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    pub store_type: StoreType,
     pub tasks_filename: String,
     #[serde(skip)]
     pub config_filename: String,
@@ -31,6 +32,18 @@ pub enum ConfigError {
     SerialiseError(#[from] Error),
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum StoreType {
+    BasicStore,
+    JsonStore,
+}
+
+pub struct ConfigFields {
+    pub tasks_filename: Option<String>,
+    pub config_filename: Option<String>,
+    pub query_options: QueryOptions,
+}
+
 impl Default for Config {
     fn default() -> Self {
         let mut config_dir = config_local_dir().unwrap();
@@ -40,6 +53,7 @@ impl Default for Config {
         tasks_dir.push(env!("CARGO_PKG_NAME"));
 
         Config {
+            store_type: StoreType::BasicStore,
             tasks_filename: String::from("tasks.json"),
             config_filename: String::from("config.toml"),
             config_dir,
@@ -118,10 +132,4 @@ Query Options: \n{}",
             self.config_filename, self.tasks_filename, self.query_options
         )
     }
-}
-
-pub struct ConfigFields {
-    pub tasks_filename: Option<String>,
-    pub config_filename: Option<String>,
-    pub query_options: QueryOptions,
 }

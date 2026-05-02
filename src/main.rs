@@ -1,8 +1,8 @@
 use rust_task_manager::commands::handle_command;
-use rust_task_manager::config::Config;
+use rust_task_manager::config::{Config, StoreType};
 use rust_task_manager::display::print_table;
 use rust_task_manager::parser::get_args;
-use rust_task_manager::tasks::JsonStore;
+use rust_task_manager::tasks::{BasicStore, JsonStore};
 use rust_task_manager::tasks::taskstore::TaskStore;
 
 fn main() {
@@ -19,7 +19,11 @@ fn main() {
         // continues with defaults
     }
 
-    let mut manager = JsonStore::new(config.get_tasks_filepath());
+    let mut manager: Box<dyn TaskStore> = match config.store_type {
+        StoreType::BasicStore => Box::new(BasicStore::default()),
+        StoreType::JsonStore => Box::new(JsonStore::new(config.get_tasks_filepath())),
+    };
+
     manager.open().unwrap_or_else(|e| {
         println!("Error fetching tasks from {}", config.tasks_filename);
         println!("{e}");
